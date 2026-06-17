@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#1a1030" />
+  <title>Blobbie Dash</title>
+  <link rel="icon" type="image/png" href="assets/blobbie1.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- top bar -->
+    <header id="topbar" class="hidden">
+      <div class="brand">
+        <img src="assets/blobbie1.png" alt="Blobbie" class="brand-logo" />
+        <span class="brand-name">Blobbie&nbsp;Dash</span>
+      </div>
+      <div class="wallet" id="wallet">
+        <span class="coin-ic">🪙</span>
+        <span id="walletBalance">0</span>
+        <span class="wallet-unit">$BLOBBIE</span>
+      </div>
+    </header>
+
+    <!-- LOADING -->
+    <section id="screen-loading" class="screen active">
+      <div class="loader">
+        <img src="assets/blobbie1.png" alt="Blobbie" class="bounce" />
+        <p>Loading Blobbie Dash…</p>
+      </div>
+    </section>
+
+    <!-- IDENTITY -->
+    <section id="screen-identity" class="screen">
+      <div class="card center">
+        <img src="assets/blobbie1.png" alt="Blobbie" class="hero-blob" />
+        <h1>Blobbie Dash</h1>
+        <p class="subtitle">Endless PvP runner. Collect $BLOBBIE, beat rivals, climb the leaderboard.</p>
+        <label class="field">
+          <span>Choose your runner name</span>
+          <input id="usernameInput" type="text" maxlength="18" placeholder="e.g. BlobKing" autocomplete="off" />
+        </label>
+        <button id="btnRegister" class="btn btn-primary btn-block">Enter the Arena</button>
+        <p class="hint" id="identityHint"></p>
+      </div>
+    </section>
+
+    <!-- MENU -->
+    <section id="screen-menu" class="screen">
+      <div class="menu-wrap">
+        <div class="profile-card card">
+          <img src="assets/blobbie1.png" alt="" class="avatar" />
+          <div class="profile-info">
+            <div class="profile-name" id="profileName">—</div>
+            <div class="profile-stats">
+              <span title="Weekly rank">🏆 #<b id="statRank">—</b></span>
+              <span title="Wins / Games">⚔️ <b id="statWins">0</b>/<b id="statGames">0</b></span>
+              <span title="Best score">⭐ <b id="statBest">0</b></span>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="play-title">Choose a mode</h2>
+        <div class="mode-grid">
+          <button class="mode-card" data-mode="solo">
+            <span class="mode-ic">🎮</span>
+            <span class="mode-name">Solo Practice</span>
+            <span class="mode-desc">Warm up. Not ranked, no fee.</span>
+          </button>
+          <button class="mode-card highlight" data-mode="ranked">
+            <span class="mode-ic">⚡</span>
+            <span class="mode-name">Ranked PvP</span>
+            <span class="mode-desc">Random rival · <b id="feeLabel">50</b> $BLOBBIE entry · winner takes the pool · counts on the leaderboard.</span>
+          </button>
+          <button class="mode-card" data-mode="friend">
+            <span class="mode-ic">🤝</span>
+            <span class="mode-name">Play a Friend</span>
+            <span class="mode-desc">Private room with a code. Free & casual.</span>
+          </button>
+        </div>
+
+        <div class="menu-actions">
+          <button class="btn btn-ghost" id="btnLeaderboard">🏆 Leaderboard</button>
+          <button class="btn btn-ghost" id="btnTournament">🎟️ Tournament</button>
+          <button class="btn btn-ghost" id="btnHowto">❓ How to play</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MATCHMAKING / ROOM -->
+    <section id="screen-lobby" class="screen">
+      <div class="card center lobby-card">
+        <img src="assets/blobbie1.png" alt="" class="spin" />
+        <h2 id="lobbyTitle">Finding a rival…</h2>
+        <p id="lobbyText" class="subtitle"></p>
+
+        <div id="roomCodeBox" class="room-code hidden">
+          <span class="room-label">Share this code</span>
+          <div class="code-row">
+            <code id="roomCode">----</code>
+            <button class="btn btn-mini" id="btnCopyCode">Copy</button>
+          </div>
+        </div>
+
+        <div id="friendChoice" class="hidden">
+          <button class="btn btn-primary btn-block" id="btnCreateRoom">Create a Room</button>
+          <div class="or-divider"><span>or</span></div>
+        </div>
+
+        <div id="joinRoomBox" class="hidden">
+          <label class="field">
+            <span>Enter your friend's code</span>
+            <input id="joinCodeInput" type="text" maxlength="4" placeholder="ABCD" autocomplete="off" style="text-transform:uppercase" />
+          </label>
+          <button class="btn btn-ghost btn-block" id="btnJoinRoom">Join Match</button>
+        </div>
+
+        <button class="btn btn-ghost" id="btnCancelLobby">Cancel</button>
+      </div>
+    </section>
+
+    <!-- GAME -->
+    <section id="screen-game" class="screen">
+      <div class="game-stage">
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- HUD -->
+        <div class="hud">
+          <div class="hud-left">
+            <div class="hud-score" id="hudScore">0</div>
+            <div class="hud-sub"><span id="hudCoins">0</span> 🪙 · <span id="hudDist">0</span> m</div>
+          </div>
+          <div class="hud-right" id="hudOpponent">
+            <div class="opp-name" id="oppName">Rival</div>
+            <div class="opp-score" id="oppScore">0</div>
+            <div class="opp-tag" id="oppTag"></div>
+          </div>
+        </div>
+
+        <!-- countdown -->
+        <div id="countdown" class="countdown hidden"><span id="countNum">3</span></div>
+
+        <!-- mobile controls -->
+        <div class="touch-controls">
+          <button class="tc tc-left" data-act="left">◀</button>
+          <button class="tc tc-jump" data-act="jump">⤴ JUMP</button>
+          <button class="tc tc-slide" data-act="slide">⤵ SLIDE</button>
+          <button class="tc tc-right" data-act="right">▶</button>
+        </div>
+
+        <button class="btn btn-mini quit-btn" id="btnQuit">Quit</button>
+      </div>
+    </section>
+
+    <!-- RESULT -->
+    <section id="screen-result" class="screen">
+      <div class="card center result-card">
+        <div id="resultBanner" class="result-banner">Game Over</div>
+        <img src="assets/blobbie1.png" alt="" id="resultBlob" class="result-blob" />
+        <div class="result-grid">
+          <div class="result-you">
+            <div class="rl">You</div>
+            <div class="rscore" id="resYouScore">0</div>
+            <div class="rsub"><span id="resYouCoins">0</span> 🪙 · <span id="resYouDist">0</span> m</div>
+          </div>
+          <div id="resultVs" class="result-vs hidden">
+            <span>VS</span>
+          </div>
+          <div id="resultOpp" class="result-opp hidden">
+            <div class="rl" id="resOppName">Rival</div>
+            <div class="rscore" id="resOppScore">0</div>
+            <div class="rsub"><span id="resOppCoins">0</span> 🪙 · <span id="resOppDist">0</span> m</div>
+          </div>
+        </div>
+        <div id="resultPrize" class="result-prize hidden"></div>
+        <div class="result-actions">
+          <button class="btn btn-primary" id="btnPlayAgain">Play Again</button>
+          <button class="btn btn-ghost" id="btnBackMenu">Menu</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODAL: leaderboard / tournament / howto -->
+    <div id="modal" class="modal hidden">
+      <div class="modal-box card">
+        <button class="modal-close" id="modalClose">✕</button>
+        <div id="modalContent"></div>
+      </div>
+    </div>
+
+    <!-- toast -->
+    <div id="toast" class="toast hidden"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/shared.js"></script>
+  <script src="js/blobbie.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/net.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
