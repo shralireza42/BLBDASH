@@ -50,7 +50,7 @@
     <section id="screen-menu" class="screen">
       <div class="menu-wrap">
         <div class="profile-card card">
-          <img src="assets/blobbie1.png" alt="" class="avatar" />
+          <canvas class="avatar" id="menuAvatar" width="56" height="56"></canvas>
           <div class="profile-info">
             <div class="profile-name" id="profileName">—</div>
             <div class="profile-stats">
@@ -157,7 +157,7 @@
     <section id="screen-result" class="screen">
       <div class="card center result-card">
         <div id="resultBanner" class="result-banner">Game Over</div>
-        <img src="assets/blobbie1.png" alt="" id="resultBlob" class="result-blob" />
+        <canvas id="resultBlob" class="result-blob" width="120" height="120"></canvas>
         <div class="result-grid">
           <div class="result-you">
             <div class="rl">You</div>
@@ -195,6 +195,7 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/shared.js"></script>
+  <script src="js/character.js"></script>
   <script src="js/blobbie.js"></script>
   <script src="js/game.js"></script>
   <script src="js/net.js"></script>

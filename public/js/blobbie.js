@@ -42,27 +42,48 @@
     ctx.restore();
   }
 
+  function stateToRole(state) {
+    if (state === 'jump') return 'jump';
+    if (state === 'slide') return 'slide';
+    return 'run';
+  }
+
   /**
    * Draw Blobbie centred at (x, y) where y is the FEET position.
    * size = target height in px. state controls the pose.
+   *
+   * Prefers the manifest-driven Character pieces (see character.js); if those
+   * aren't available it falls back to the classic blobbie1.png sprite, and then
+   * to a fully procedural blob, so the game always renders something.
    */
   function draw(ctx, x, y, size, opts) {
     opts = opts || {};
     const t = opts.time || 0;
-    let sx = 1, sy = 1;           // squash / stretch
-    let lean = 0;                 // body lean
-    let bob = 0;
+    const alpha = opts.alpha == null ? 1 : opts.alpha;
+    const role = stateToRole(opts.state);
 
-    if (opts.state === 'jump') {
-      sy = 1.12; sx = 0.92; lean = -0.05;
-    } else if (opts.state === 'slide') {
-      sy = 0.55; sx = 1.35; lean = 0.0;
-    } else { // run
-      const phase = Math.sin(t * 14);
-      sy = 1 + phase * 0.05;
-      sx = 1 - phase * 0.05;
-      bob = Math.abs(Math.cos(t * 14)) * size * 0.04;
+    // ground shadow (shared by every render path)
+    const shadowSquash = opts.state === 'slide' ? 0.5 : 0.42;
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.28;
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.ellipse(x, y + size * 0.02, size * shadowSquash, size * 0.12, 0, 0, 7);
+    ctx.fill();
+    ctx.restore();
+
+    // 1) preferred: user's manifest character pieces
+    if (window.Character && window.Character.has(role)) {
+      const bob = opts.state === 'run' ? Math.abs(Math.cos(t * 14)) * size * 0.04 : 0;
+      const drewH = opts.state === 'jump' ? size * 1.04 : size;
+      if (window.Character.draw(ctx, role, x, y, drewH, { alpha, tint: opts.tint, bob })) return;
     }
+
+    // 2) fallback: classic sprite / procedural blob (with squash & stretch)
+    let sx = 1, sy = 1, lean = 0, bob = 0;
+    if (opts.state === 'jump') { sy = 1.12; sx = 0.92; lean = -0.05; }
+    else if (opts.state === 'slide') { sy = 0.55; sx = 1.35; }
+    else { const phase = Math.sin(t * 14); sy = 1 + phase * 0.05; sx = 1 - phase * 0.05; bob = Math.abs(Math.cos(t * 14)) * size * 0.04; }
 
     const w = size * sx;
     const h = size * sy;
@@ -70,17 +91,7 @@
     const drawY = y - h + bob;
 
     ctx.save();
-    ctx.globalAlpha = opts.alpha == null ? 1 : opts.alpha;
-
-    // ground shadow
-    ctx.save();
-    ctx.globalAlpha = (opts.alpha == null ? 1 : opts.alpha) * 0.28;
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.ellipse(x, y + size * 0.02, w * 0.42, size * 0.12, 0, 0, 7);
-    ctx.fill();
-    ctx.restore();
-
+    ctx.globalAlpha = alpha;
     if (lean) {
       ctx.translate(x, y);
       ctx.rotate(lean);
@@ -99,14 +110,11 @@
       } else {
         ctx.drawImage(sprite, drawX, drawY, w, h);
       }
-    } else if (spriteFailed) {
-      drawProcedural(ctx, w, h, opts.tint);
-      // translate the procedural draw into place
     }
     ctx.restore();
 
     // procedural fallback needs its own transform (drawn at origin box)
-    if (spriteFailed) {
+    if (!spriteReady && spriteFailed) {
       ctx.save();
       ctx.globalAlpha = opts.alpha == null ? 1 : opts.alpha;
       ctx.translate(drawX, drawY);

@@ -21,6 +21,26 @@
     screens.forEach((s) => $('screen-' + s).classList.toggle('active', s === name));
     // hide the top bar on immersive / pre-login screens
     $('topbar').classList.toggle('hidden', name === 'loading' || name === 'identity' || name === 'game');
+    if (name === 'menu') requestAnimationFrame(() => drawCharCanvas($('menuAvatar'), 'avatar'));
+  }
+
+  // Render a character role into a small canvas (avatar / result art), with a
+  // graceful fallback to the classic mascot sprite if the piece is missing.
+  function drawCharCanvas(canvas, role, opts) {
+    if (!canvas) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const cssW = canvas.clientWidth || canvas.width || 64;
+    const cssH = canvas.clientHeight || canvas.height || 64;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+    if (window.Character && window.Character.has(role)) {
+      window.Character.drawContained(ctx, role, cssW / 2, cssH / 2, cssW * 0.98, cssH * 0.98, opts || {});
+    } else if (window.Blobbie) {
+      window.Blobbie.draw(ctx, cssW / 2, cssH * 0.96, cssH * 0.84, { state: 'run', time: performance.now() / 1000 });
+    }
   }
 
   function toast(msg, ms) {
@@ -49,6 +69,7 @@
   // ---------------- init ----------------
   async function init() {
     showScreen('loading');
+    if (window.Character) Character.load();
     try { state.config = await Net.getConfig(); } catch (e) {}
     $('feeLabel').textContent = state.config.entryFee;
     Net.connect();
@@ -232,6 +253,7 @@
     showScreen('result');
     $('resultBanner').textContent = 'Run Complete!';
     $('resultBanner').className = 'result-banner win';
+    requestAnimationFrame(() => drawCharCanvas($('resultBlob'), 'win'));
     $('resYouScore').textContent = result.score;
     $('resYouCoins').textContent = result.coins;
     $('resYouDist').textContent = result.distance;
@@ -251,6 +273,8 @@
     if (data.outcome === 'win') { banner.textContent = 'You Win! 🎉'; banner.className = 'result-banner win'; }
     else if (data.outcome === 'lose') { banner.textContent = 'Defeat'; banner.className = 'result-banner lose'; }
     else { banner.textContent = "It's a Tie!"; banner.className = 'result-banner tie'; }
+    const resultRole = data.outcome === 'lose' ? 'lose' : data.outcome === 'tie' ? 'idle' : 'win';
+    requestAnimationFrame(() => drawCharCanvas($('resultBlob'), resultRole));
 
     $('resYouScore').textContent = data.you.score;
     $('resYouCoins').textContent = data.you.coins;
