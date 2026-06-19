@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="165" height="224" viewBox="0 0 165 224">
+  <rect x="1.5" y="1.5" width="162" height="221" rx="13.200000000000001"
+        fill="#7b4dff" fill-opacity="0.10" stroke="#7b4dff" stroke-opacity="0.6"
+        stroke-width="2" stroke-dasharray="6 5"/>
+  
+  <path d="M 82.5 13.44
+           C 160.04999999999998 8.96, 168.3 138.88, 132 201.6
+           C 105.60000000000001 224, 59.4 224, 33 201.6
+           C -3.3000000000000003 138.88, 4.95 8.96, 82.5 13.44 Z"
+        fill="#7b4dff" stroke="#1d1d28" stroke-width="2.9699999999999998"/>
+  <ellipse cx="56.099999999999994" cy="76.16000000000001" rx="16.5" ry="15.680000000000001" fill="#fff" stroke="#1d1d28" stroke-width="2"/>
+  <ellipse cx="108.9" cy="76.16000000000001" rx="16.5" ry="15.680000000000001" fill="#fff" stroke="#1d1d28" stroke-width="2"/>
+  <circle cx="59.4" cy="78.39999999999999" r="7.425" fill="#1d1d28"/>
+  <circle cx="112.2" cy="78.39999999999999" r="7.425" fill="#1d1d28"/>
+  <path d="M 59.4 112 Q 82.5 129.92 105.6 112"
+        fill="none" stroke="#22104f" stroke-width="4.95" stroke-linecap="round"/>
+  <text x="82.5" y="218" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="16" fill="#22104f" text-anchor="middle">middle pose 03</text>
+</svg>

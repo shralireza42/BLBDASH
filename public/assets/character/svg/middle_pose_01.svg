@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="157" height="223" viewBox="0 0 157 223">
+  <rect x="1.5" y="1.5" width="154" height="220" rx="12.56"
+        fill="#7b4dff" fill-opacity="0.10" stroke="#7b4dff" stroke-opacity="0.6"
+        stroke-width="2" stroke-dasharray="6 5"/>
+  
+  <path d="M 78.5 13.379999999999999
+           C 152.29 8.92, 160.14000000000001 138.26, 125.60000000000001 200.70000000000002
+           C 100.48 223, 56.519999999999996 223, 31.400000000000002 200.70000000000002
+           C -3.14 138.26, 4.71 8.92, 78.5 13.379999999999999 Z"
+        fill="#7b4dff" stroke="#1d1d28" stroke-width="2.8259999999999996"/>
+  <ellipse cx="53.379999999999995" cy="75.82000000000001" rx="15.700000000000001" ry="15.610000000000001" fill="#fff" stroke="#1d1d28" stroke-width="2"/>
+  <ellipse cx="103.62" cy="75.82000000000001" rx="15.700000000000001" ry="15.610000000000001" fill="#fff" stroke="#1d1d28" stroke-width="2"/>
+  <circle cx="56.519999999999996" cy="78.05" r="7.0649999999999995" fill="#1d1d28"/>
+  <circle cx="106.75999999999999" cy="78.05" r="7.0649999999999995" fill="#1d1d28"/>
+  <path d="M 56.519999999999996 111.5 Q 78.5 129.34 100.48 111.5"
+        fill="none" stroke="#22104f" stroke-width="4.71" stroke-linecap="round"/>
+  <text x="78.5" y="217" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="16" fill="#22104f" text-anchor="middle">middle pose 01</text>
+</svg>

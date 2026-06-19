@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="90" height="130" viewBox="0 0 90 130">
+  <rect x="1.5" y="1.5" width="87" height="127" rx="7.2"
+        fill="#39d98a" fill-opacity="0.10" stroke="#39d98a" stroke-opacity="0.6"
+        stroke-width="2" stroke-dasharray="6 5"/>
+  
+  <circle cx="45" cy="65" r="36" fill="#39d98a" stroke="#1d1d28" stroke-width="3"/>
+  <text x="45" y="76.52" font-family="system-ui, sans-serif" font-weight="800"
+        font-size="36" fill="#0b4d31" text-anchor="middle">B</text>
+  <text x="45" y="124" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="9.9" fill="#0b4d31" text-anchor="middle">bottom asset 13</text>
+</svg>

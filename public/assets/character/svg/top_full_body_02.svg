@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="194" height="331" viewBox="0 0 194 331">
+  <rect x="1.5" y="1.5" width="191" height="328" rx="15.52"
+        fill="#ef7a8b" fill-opacity="0.10" stroke="#ef7a8b" stroke-opacity="0.6"
+        stroke-width="2" stroke-dasharray="6 5"/>
+  
+  <path d="M 97 19.86
+           C 188.18 13.24, 197.88 205.22, 155.20000000000002 297.90000000000003
+           C 124.16 331, 69.84 331, 38.800000000000004 297.90000000000003
+           C -3.88 205.22, 5.819999999999999 13.24, 97 19.86 Z"
+        fill="#ef7a8b" stroke="#1d1d28" stroke-width="3.4919999999999995"/>
+  <ellipse cx="65.96000000000001" cy="112.54" rx="19.400000000000002" ry="23.17" fill="#fff" stroke="#1d1d28" stroke-width="2"/>
+  <ellipse cx="128.04" cy="112.54" rx="19.400000000000002" ry="23.17" fill="#fff" stroke="#1d1d28" stroke-width="2"/>
+  <circle cx="69.84" cy="115.85" r="8.73" fill="#1d1d28"/>
+  <circle cx="131.92000000000002" cy="115.85" r="8.73" fill="#1d1d28"/>
+  <path d="M 69.84 165.5 Q 97 191.98 124.16 165.5"
+        fill="none" stroke="#7a1f2b" stroke-width="5.819999999999999" stroke-linecap="round"/>
+  <text x="97" y="325" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="16" fill="#7a1f2b" text-anchor="middle">top full body 02</text>
+</svg>

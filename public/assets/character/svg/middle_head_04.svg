@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="125" height="118" viewBox="0 0 125 118">
+  <rect x="1.5" y="1.5" width="122" height="115" rx="9.44"
+        fill="#ffd23f" fill-opacity="0.10" stroke="#ffd23f" stroke-opacity="0.6"
+        stroke-width="2" stroke-dasharray="6 5"/>
+  
+  <ellipse cx="62.5" cy="59" rx="55" ry="49.559999999999995" fill="#ffd23f" stroke="#1d1d28" stroke-width="3"/>
+  <circle cx="42.5" cy="53.1" r="10" fill="#fff" stroke="#1d1d28" stroke-width="2"/>
+  <circle cx="82.5" cy="53.1" r="10" fill="#fff" stroke="#1d1d28" stroke-width="2"/>
+  <circle cx="45" cy="54.28" r="4.375" fill="#1d1d28"/>
+  <circle cx="85" cy="54.28" r="4.375" fill="#1d1d28"/>
+  <path d="M 46.25 77.88 Q 62.5 89.68 78.75 77.88"
+        fill="none" stroke="#7a5800" stroke-width="3" stroke-linecap="round"/>
+  <text x="62.5" y="112" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="13.75" fill="#7a5800" text-anchor="middle">middle head 04</text>
+</svg>
