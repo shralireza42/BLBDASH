@@ -1,20 +1,21 @@
 /*
- * Blobbie Dash - ONE shared underwater-tunnel background.
+ * Blobbie Dash - ONE shared "fantastic nature" world background.
  *
- * The SAME instance/renderer is used for the main menu (#bgfx) and for the
- * gameplay scene, so the background is identical in both and never switches.
+ * The SAME instance/renderer is used for the main menu and for gameplay, so the
+ * background is identical in both and never switches.
  *
- * Composition (visual lock — do not change between menu & game):
- *   underwater blue gradient · bioluminescent glow · god rays ·
- *   coral reefs (left & right, outside the road) · glass tunnel road with
- *   neon cyan tunnel rings · magenta neon side strips · faint lane dividers ·
- *   empty glossy centre road · 16:9 cartoon style · fixed camera / vanishing point.
+ * Composition: bright blue sky · warm sun + soft rays · drifting clouds ·
+ * layered snow-capped mountains · rolling green hills · a winding earthy PATH
+ * to the vanishing point, lined with stylized fantasy trees and overhead vine
+ * archways · glowing blossoms · birds high in the sky · butterflies by the path
+ * · floating pollen · fireflies · gentle sun-dapples on the path.
  *
  * The static scene is rendered ONCE to an offscreen canvas. Per frame we only
- * update + draw the cheap animated layers (pooled fish, pooled bubbles, road
- * caustics, neon shimmer). No Graphics objects are allocated per frame.
+ * update + draw the cheap animated layers (pooled birds/butterflies, pollen,
+ * fireflies, sun dapples, sparkle). No objects are allocated per frame.
  *
- * Projection matches game.js exactly so gameplay entities sit on this road.
+ * Projection matches game.js exactly so gameplay entities sit on the path.
+ * (Class name kept for backwards-compatibility with existing references.)
  */
 (function () {
   'use strict';
@@ -22,15 +23,16 @@
   const FOCAL = 10;
   const VIEW = 72;
   const PLAYER_Z = 0.6;
-  const LANE_EDGE = 1.55; // road half-width in lane units
+  const LANE_EDGE = 1.55; // path half-width in lane units
 
   class BlobbieDashUnderwaterBackground {
     constructor() {
       this.W = 0; this.H = 0; this.dpr = 1;
       this.staticCanvas = (typeof document !== 'undefined') ? document.createElement('canvas') : null;
       this.sctx = this.staticCanvas ? this.staticCanvas.getContext('2d') : null;
-      this.fish = [];
-      this.bubbles = [];
+      this.fliers = [];   // birds (sky) + butterflies (sides)
+      this.pollen = [];   // drifting pollen / seeds
+      this.motes = [];    // fireflies / sparkles
       this.time = 0;
       this._built = false;
     }
@@ -45,7 +47,6 @@
       return { x, y, scale: persp };
     }
 
-    // road edge x at a given screen y (null when above the road / horizon)
     _roadEdgeX(y, side) {
       const far = side < 0 ? this.roadFarL : this.roadFarR;
       const near = side < 0 ? this.roadNearL : this.roadNearR;
@@ -58,7 +59,7 @@
       dpr = dpr || 1;
       if (this._built && this.W === W && this.H === H && this.dpr === dpr) return;
       this.W = W; this.H = H; this.dpr = dpr;
-      this.horizonY = H * 0.34;
+      this.horizonY = H * 0.40;          // a touch lower horizon for big sky + mountains
       this.groundY = H * 0.97;
       this.centerX = W / 2;
       this.spread = W * 0.27;
@@ -71,7 +72,7 @@
       this._built = true;
     }
 
-    // ---------- STATIC SCENE (rendered once) ----------
+    // ---------- STATIC SCENE ----------
     _buildStatic() {
       const W = this.W, H = this.H, c = this.staticCanvas, ctx = this.sctx;
       c.width = Math.round(W * this.dpr);
@@ -79,74 +80,158 @@
       ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
       ctx.clearRect(0, 0, W, H);
 
-      // water gradient (top) + seabed (below horizon)
-      const sky = ctx.createLinearGradient(0, 0, 0, this.horizonY + 40);
-      sky.addColorStop(0, '#03021a');
-      sky.addColorStop(0.5, '#0a0a44');
-      sky.addColorStop(1, '#13105e');
+      // blue sky
+      const sky = ctx.createLinearGradient(0, 0, 0, this.horizonY + 30);
+      sky.addColorStop(0, '#3aa0ff');
+      sky.addColorStop(0.55, '#8fd0ff');
+      sky.addColorStop(1, '#e6f6ff');
       ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, W, this.horizonY + 40);
+      ctx.fillRect(0, 0, W, this.horizonY + 30);
 
-      // bioluminescent glow orb
-      const ox = W * 0.74, oy = this.horizonY * 0.5, orad = Math.min(W, H) * 0.13;
-      const og = ctx.createRadialGradient(ox, oy, 0, ox, oy, orad);
-      og.addColorStop(0, 'rgba(120,255,240,0.9)');
-      og.addColorStop(0.4, 'rgba(60,200,255,0.45)');
-      og.addColorStop(1, 'transparent');
-      ctx.fillStyle = og;
-      ctx.beginPath(); ctx.arc(ox, oy, orad, 0, 7); ctx.fill();
+      // warm sun + glow
+      const sx = W * 0.76, sy = this.horizonY * 0.42, sr = Math.min(W, H) * 0.16;
+      const sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr);
+      sg.addColorStop(0, 'rgba(255,250,210,0.98)');
+      sg.addColorStop(0.35, 'rgba(255,238,160,0.7)');
+      sg.addColorStop(1, 'rgba(255,238,160,0)');
+      ctx.fillStyle = sg;
+      ctx.beginPath(); ctx.arc(sx, sy, sr, 0, 7); ctx.fill();
+      ctx.fillStyle = 'rgba(255,252,225,0.95)';
+      ctx.beginPath(); ctx.arc(sx, sy, sr * 0.32, 0, 7); ctx.fill();
 
-      // god rays
+      // soft sun rays
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      for (let i = 0; i < 4; i++) {
-        const rx = (i / 4) * W + W * 0.1;
+      for (let i = 0; i < 5; i++) {
+        const rx = (i / 5) * W + W * 0.08;
         const grd = ctx.createLinearGradient(rx, 0, rx + 70, this.horizonY);
-        grd.addColorStop(0, 'rgba(80,230,255,0.08)');
+        grd.addColorStop(0, 'rgba(255,248,200,0.07)');
         grd.addColorStop(1, 'transparent');
         ctx.fillStyle = grd;
         ctx.beginPath();
-        ctx.moveTo(rx, 0); ctx.lineTo(rx + 60, 0); ctx.lineTo(rx + 170, this.horizonY); ctx.lineTo(rx - 90, this.horizonY);
+        ctx.moveTo(rx, 0); ctx.lineTo(rx + 60, 0); ctx.lineTo(rx + 160, this.horizonY); ctx.lineTo(rx - 80, this.horizonY);
         ctx.closePath(); ctx.fill();
       }
       ctx.restore();
 
-      // seabed water below horizon
+      this._drawClouds(ctx);
+      this._drawMountains(ctx);
+
+      // rolling green ground below the horizon
       const g = ctx.createLinearGradient(0, this.horizonY, 0, H);
-      g.addColorStop(0, '#0a0838');
-      g.addColorStop(1, '#1a0b4a');
+      g.addColorStop(0, '#7ed06a');
+      g.addColorStop(0.5, '#56b256');
+      g.addColorStop(1, '#2f8f43');
       ctx.fillStyle = g;
       ctx.fillRect(0, this.horizonY, W, H - this.horizonY);
+      // a couple of soft hill humps along the horizon line
+      ctx.fillStyle = '#69c25f';
+      for (let i = -1; i < 4; i++) {
+        const hx = i * W * 0.42 + (W * 0.1);
+        ctx.beginPath();
+        ctx.moveTo(hx - W * 0.26, this.horizonY + 2);
+        ctx.quadraticCurveTo(hx, this.horizonY - H * 0.06, hx + W * 0.26, this.horizonY + 2);
+        ctx.fill();
+      }
 
-      this._drawCoral(ctx);
-      this._drawRoad(ctx);
+      this._drawTrees(ctx);
+      this._drawPath(ctx);
     }
 
-    _drawCoral(ctx) {
-      // neon coral reefs on the far left & right, OUTSIDE the road (never centre)
-      const H = this.H, W = this.W;
-      const baseY = this.groundY;
-      const clusters = [
-        { x: W * 0.06, s: H * 0.16, c: '#ff4fd8' },
-        { x: W * 0.15, s: H * 0.11, c: '#7b5cff' },
-        { x: W * 0.94, s: H * 0.16, c: '#16f2d6' },
-        { x: W * 0.85, s: H * 0.11, c: '#39ff9e' },
-      ];
-      for (const cl of clusters) {
-        ctx.save();
-        ctx.shadowColor = cl.c; ctx.shadowBlur = 14;
-        ctx.strokeStyle = cl.c; ctx.lineWidth = Math.max(3, cl.s * 0.06);
-        ctx.lineCap = 'round';
-        for (let b = -2; b <= 2; b++) {
-          const bx = cl.x + b * cl.s * 0.16;
+    _drawClouds(ctx) {
+      const W = this.W;
+      const puff = (cx, cy, s, a) => {
+        ctx.fillStyle = 'rgba(255,255,255,' + a + ')';
+        ctx.beginPath();
+        ctx.arc(cx, cy, s, 0, 7);
+        ctx.arc(cx + s * 0.9, cy + s * 0.1, s * 0.8, 0, 7);
+        ctx.arc(cx - s * 0.9, cy + s * 0.12, s * 0.72, 0, 7);
+        ctx.arc(cx + s * 0.3, cy - s * 0.5, s * 0.65, 0, 7);
+        ctx.fill();
+      };
+      puff(W * 0.18, this.horizonY * 0.32, this.H * 0.045, 0.95);
+      puff(W * 0.46, this.horizonY * 0.22, this.H * 0.035, 0.9);
+      puff(W * 0.62, this.horizonY * 0.5, this.H * 0.03, 0.85);
+      puff(W * 0.9, this.horizonY * 0.28, this.H * 0.04, 0.9);
+    }
+
+    _drawMountains(ctx) {
+      const W = this.W, H = this.H, hy = this.horizonY;
+      // far range (blue-grey, snow caps)
+      const far = ['#9fb8da', '#8aa6cf'];
+      const peaks = 6;
+      ctx.fillStyle = far[0];
+      ctx.beginPath(); ctx.moveTo(0, hy);
+      for (let i = 0; i <= peaks; i++) {
+        const px = (i / peaks) * W;
+        const ph = hy - H * (0.10 + 0.10 * Math.abs(Math.sin(i * 1.7)));
+        ctx.lineTo(px - W / peaks / 2, hy);
+        ctx.lineTo(px, ph);
+      }
+      ctx.lineTo(W, hy); ctx.closePath(); ctx.fill();
+      // snow caps
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      for (let i = 0; i <= peaks; i++) {
+        const px = (i / peaks) * W;
+        const ph = hy - H * (0.10 + 0.10 * Math.abs(Math.sin(i * 1.7)));
+        ctx.beginPath();
+        ctx.moveTo(px, ph);
+        ctx.lineTo(px - W * 0.022, ph + H * 0.03);
+        ctx.lineTo(px + W * 0.005, ph + H * 0.022);
+        ctx.lineTo(px + W * 0.024, ph + H * 0.032);
+        ctx.closePath(); ctx.fill();
+      }
+      // nearer green range
+      ctx.fillStyle = '#4f9e5a';
+      ctx.beginPath(); ctx.moveTo(0, hy + 2);
+      for (let i = 0; i <= 5; i++) {
+        const px = (i / 5) * W + W * 0.08;
+        ctx.lineTo(px - W * 0.1, hy + 2);
+        ctx.lineTo(px, hy - H * (0.05 + 0.05 * Math.abs(Math.cos(i * 2.1))));
+      }
+      ctx.lineTo(W, hy + 2); ctx.closePath(); ctx.fill();
+    }
+
+    _tree(ctx, x, baseY, s, glow) {
+      // trunk
+      ctx.fillStyle = '#7a5230';
+      ctx.fillRect(x - s * 0.08, baseY - s * 0.55, s * 0.16, s * 0.55);
+      // layered canopy
+      const greens = ['#2f8f48', '#3aa657', '#56c46a'];
+      for (let i = 0; i < 3; i++) {
+        ctx.fillStyle = greens[i];
+        ctx.beginPath();
+        ctx.arc(x, baseY - s * (0.62 + i * 0.18), s * (0.42 - i * 0.07), 0, 7);
+        ctx.arc(x - s * 0.28, baseY - s * (0.55 + i * 0.16), s * (0.3 - i * 0.05), 0, 7);
+        ctx.arc(x + s * 0.28, baseY - s * (0.55 + i * 0.16), s * (0.3 - i * 0.05), 0, 7);
+        ctx.fill();
+      }
+      // glowing blossoms (fantastic touch)
+      if (glow) {
+        const cols = ['#ff9ed1', '#ffe27a', '#bfe0ff'];
+        for (let i = 0; i < 7; i++) {
+          ctx.fillStyle = cols[i % cols.length];
+          ctx.globalAlpha = 0.9;
+          const a = i * 1.5;
           ctx.beginPath();
-          ctx.moveTo(bx, baseY);
-          ctx.quadraticCurveTo(bx + b * cl.s * 0.18, baseY - cl.s * 0.6, bx + b * cl.s * 0.05, baseY - cl.s);
-          ctx.stroke();
-          // little nubs
-          ctx.beginPath(); ctx.arc(bx + b * cl.s * 0.05, baseY - cl.s, cl.s * 0.06, 0, 7); ctx.stroke();
+          ctx.arc(x + Math.cos(a) * s * 0.35, baseY - s * (0.7 + (i % 3) * 0.1) + Math.sin(a) * s * 0.2, s * 0.05, 0, 7);
+          ctx.fill();
         }
-        ctx.restore();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    _drawTrees(ctx) {
+      const W = this.W, baseY = this.groundY;
+      // big trees flanking the near path, smaller ones further out (left & right, never on the path)
+      this._tree(ctx, W * 0.08, baseY, this.H * 0.42, true);
+      this._tree(ctx, W * 0.2, baseY - this.H * 0.04, this.H * 0.3, true);
+      this._tree(ctx, W * 0.92, baseY, this.H * 0.42, true);
+      this._tree(ctx, W * 0.8, baseY - this.H * 0.04, this.H * 0.3, true);
+      // a few bushes
+      ctx.fillStyle = '#3aa657';
+      for (const bx of [W * 0.15, W * 0.27, W * 0.73, W * 0.86]) {
+        ctx.beginPath(); ctx.arc(bx, baseY, this.H * 0.05, 0, 7); ctx.arc(bx + this.H * 0.04, baseY, this.H * 0.04, 0, 7); ctx.fill();
       }
     }
 
@@ -157,112 +242,134 @@
       ctx.closePath();
     }
 
-    _drawRoad(ctx) {
+    _drawPath(ctx) {
       const nL = this.roadNearL, nR = this.roadNearR, fL = this.roadFarL, fR = this.roadFarR;
 
-      // glossy glass road surface
-      const road = ctx.createLinearGradient(0, this.horizonY, 0, this.H);
-      road.addColorStop(0, '#0b0730');
-      road.addColorStop(0.6, '#1a1150');
-      road.addColorStop(1, '#241863');
-      ctx.fillStyle = road;
+      // grassy darker border just outside the path
+      ctx.save();
+      ctx.fillStyle = '#3f9a46';
+      const eL = this.project(PLAYER_Z, -LANE_EDGE - 0.16, 0), eFL = this.project(VIEW, -LANE_EDGE - 0.16, 0);
+      const eR = this.project(PLAYER_Z, LANE_EDGE + 0.16, 0), eFR = this.project(VIEW, LANE_EDGE + 0.16, 0);
+      this._roundedTrap(ctx, eL, eR, eFL, eFR); ctx.fill();
+      ctx.restore();
+
+      // earthy path surface
+      const path = ctx.createLinearGradient(0, this.horizonY, 0, this.H);
+      path.addColorStop(0, '#cda978');
+      path.addColorStop(0.55, '#dcbe8c');
+      path.addColorStop(1, '#e9d2a4');
+      ctx.fillStyle = path;
       this._roundedTrap(ctx, nL, nR, fL, fR);
       ctx.fill();
 
-      // glass sheen down the centre
-      const sheen = ctx.createLinearGradient(0, this.horizonY, 0, this.groundY);
-      sheen.addColorStop(0, 'rgba(120,240,255,0.0)');
-      sheen.addColorStop(1, 'rgba(120,240,255,0.06)');
+      // light center wear-line down the path
       ctx.save();
       this._roundedTrap(ctx, nL, nR, fL, fR); ctx.clip();
-      ctx.fillStyle = sheen; ctx.fillRect(0, this.horizonY, this.W, this.H - this.horizonY);
+      const sheen = ctx.createLinearGradient(this.centerX - 4, 0, this.centerX + 4, 0);
+      sheen.addColorStop(0, 'rgba(255,245,220,0)');
+      sheen.addColorStop(0.5, 'rgba(255,245,220,0.22)');
+      sheen.addColorStop(1, 'rgba(255,245,220,0)');
+      ctx.fillStyle = sheen; ctx.fillRect(this.centerX - this.W * 0.08, this.horizonY, this.W * 0.16, this.H);
       ctx.restore();
 
-      // tunnel rings (neon cyan arches over the road, smaller toward the vanishing point)
+      // overhead vine archways (natural "tunnel" over the path)
       ctx.save();
-      ctx.strokeStyle = 'rgba(80,255,240,0.5)';
-      ctx.shadowColor = '#16f2d6'; ctx.shadowBlur = 10;
+      ctx.lineCap = 'round';
       for (let z = VIEW - 4; z > PLAYER_Z; z -= 7) {
-        const l = this.project(z, -LANE_EDGE, 0);
-        const r = this.project(z, LANE_EDGE, 0);
+        const l = this.project(z, -LANE_EDGE - 0.1, 0);
+        const r = this.project(z, LANE_EDGE + 0.1, 0);
         const cx = (l.x + r.x) / 2;
         const rx = (r.x - l.x) / 2;
-        const ry = rx * 0.92;
-        ctx.globalAlpha = Math.min(0.7, l.scale * 1.4);
-        ctx.lineWidth = Math.max(1, l.scale * 3);
+        const ry = rx * 0.95;
+        ctx.globalAlpha = Math.min(0.85, l.scale * 1.5);
+        ctx.strokeStyle = '#2f8f48';
+        ctx.lineWidth = Math.max(1.5, l.scale * 6);
         ctx.beginPath();
-        // arch over the road (top half + small side returns)
-        ctx.ellipse(cx, l.y, rx, ry, 0, Math.PI * 0.08, Math.PI - Math.PI * 0.08, true);
+        ctx.ellipse(cx, l.y, rx, ry, 0, Math.PI * 0.06, Math.PI - Math.PI * 0.06, true);
         ctx.stroke();
+        // leaf nubs + blossoms along the arch
+        const leaves = 7;
+        for (let k = 1; k < leaves; k++) {
+          const ang = Math.PI * 0.06 + (Math.PI - Math.PI * 0.12) * (k / leaves);
+          const lx = cx - Math.cos(ang) * rx;
+          const ly = l.y - Math.sin(ang) * ry;
+          ctx.fillStyle = (k % 3 === 0) ? '#ff9ed1' : '#56c46a';
+          ctx.beginPath(); ctx.arc(lx, ly, Math.max(1.2, l.scale * 4), 0, 7); ctx.fill();
+        }
       }
       ctx.globalAlpha = 1;
       ctx.restore();
 
-      // lane dividers — clearer readability (3 lanes), with a soft cyan glow
+      // subtle lane lines (3 lanes readable) — light stepping tone
       ctx.save();
-      ctx.strokeStyle = 'rgba(120,255,245,0.35)';
-      ctx.shadowColor = '#16f2d6'; ctx.shadowBlur = 6; ctx.lineWidth = 1.8;
+      ctx.strokeStyle = 'rgba(120,90,50,0.35)';
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([10, 12]);
       for (const ln of [-0.5, 0.5]) {
         const a = this.project(PLAYER_Z, ln, 0), b = this.project(VIEW, ln, 0);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
       ctx.restore();
 
-      // neon side strips (magenta edge rails) — emissive double-stroke (glow + core)
+      // grassy edge tufts + light path rim (readable edges, no neon)
       ctx.save();
-      ctx.lineCap = 'round';
-      ctx.strokeStyle = 'rgba(255,79,216,0.55)';
-      ctx.shadowColor = '#ff4fd8'; ctx.shadowBlur = 22; ctx.lineWidth = 6;
+      ctx.strokeStyle = '#6fbf5a';
+      ctx.lineWidth = 4; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(nL.x, nL.y); ctx.lineTo(fL.x, fL.y); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(nR.x, nR.y); ctx.lineTo(fR.x, fR.y); ctx.stroke();
-      ctx.strokeStyle = '#ffd6f4'; ctx.shadowBlur = 8; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(nL.x, nL.y); ctx.lineTo(fL.x, fL.y); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(nR.x, nR.y); ctx.lineTo(fR.x, fR.y); ctx.stroke();
+      // little tufts
+      ctx.strokeStyle = '#3f9a46'; ctx.lineWidth = 2;
+      for (let z = VIEW - 2; z > PLAYER_Z; z -= 2.4) {
+        for (const side of [-1, 1]) {
+          const p = this.project(z, side * LANE_EDGE, 0);
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - side * 4 * p.scale, p.y - 7 * p.scale);
+          ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + side * 1 * p.scale, p.y - 9 * p.scale);
+          ctx.stroke();
+        }
+      }
       ctx.restore();
-      // store the rail screen-line for shimmer reuse
+
       this._rail = { nL, nR, fL, fR };
     }
 
     // ---------- ANIMATED POOLS ----------
     _seed() {
-      this.fish.length = 0;
-      this.bubbles.length = 0;
-      const W = this.W, H = this.H, rnd = (a, b) => a + Math.random() * (b - a);
-      const palette = ['#16f2d6', '#7dfff0', '#ff8fe0', '#7b9cff', '#39ff9e'];
-
-      // FAR fish: open water above the horizon — swim full width, very slow
-      const farN = Math.max(7, Math.round(W / 95));
-      for (let i = 0; i < farN; i++) {
-        this.fish.push({
-          kind: 'far', x: Math.random() * W, y: rnd(H * 0.08, this.horizonY * 0.92),
-          vx: rnd(6, 16) * (Math.random() < 0.5 ? -1 : 1),
-          size: rnd(9, 16), amp: rnd(3, 8), bob: rnd(0.5, 1.1), phase: Math.random() * 6.28,
-          color: palette[(Math.random() * palette.length) | 0], alpha: rnd(0.28, 0.5),
-        });
-      }
-      // SIDE fish: below horizon, in the water columns beside the road — slightly faster
-      const sideN = 10;
-      for (let i = 0; i < sideN; i++) {
-        const side = i % 2 === 0 ? -1 : 1;
-        this.fish.push({
-          kind: 'side', side,
-          x: Math.random() * W, y: rnd(this.horizonY + H * 0.06, this.horizonY + (this.groundY - this.horizonY) * 0.5),
-          vx: rnd(20, 40) * (Math.random() < 0.5 ? -1 : 1),
-          size: rnd(13, 24), amp: rnd(3, 6), bob: rnd(0.6, 1.2), phase: Math.random() * 6.28,
-          color: palette[(Math.random() * palette.length) | 0], alpha: rnd(0.45, 0.7),
-        });
-      }
-      // bubbles rising everywhere (foreground)
-      const bubN = Math.max(20, Math.round(W / 16));
-      for (let i = 0; i < bubN; i++) {
-        this.bubbles.push({ x: Math.random() * W, y: Math.random() * H, r: rnd(1.5, 6), sp: rnd(12, 42), seed: Math.random() * 6.28 });
-      }
-      // drifting plankton motes (depth / "alive" ambience)
-      this.motes = this.motes || [];
+      this.fliers.length = 0;
+      this.pollen.length = 0;
       this.motes.length = 0;
-      const moteN = Math.max(18, Math.round(W / 26));
+      const W = this.W, H = this.H, rnd = (a, b) => a + Math.random() * (b - a);
+
+      // BIRDS: high in the sky, slow, full width
+      const birdN = Math.max(5, Math.round(W / 150));
+      for (let i = 0; i < birdN; i++) {
+        this.fliers.push({
+          kind: 'bird', x: Math.random() * W, y: rnd(H * 0.05, this.horizonY * 0.6),
+          vx: rnd(14, 30) * (Math.random() < 0.5 ? -1 : 1),
+          size: rnd(7, 13), amp: rnd(2, 5), bob: rnd(0.8, 1.5), phase: Math.random() * 6.28,
+        });
+      }
+      // BUTTERFLIES: by the path sides, a bit faster, colorful
+      const cols = ['#ff9ed1', '#ffe27a', '#bfe0ff', '#ff7fb0', '#a8f0a0'];
+      for (let i = 0; i < 8; i++) {
+        const side = i % 2 === 0 ? -1 : 1;
+        this.fliers.push({
+          kind: 'fly', side,
+          x: Math.random() * W, y: rnd(this.horizonY + H * 0.05, this.horizonY + (this.groundY - this.horizonY) * 0.55),
+          vx: rnd(18, 34) * (Math.random() < 0.5 ? -1 : 1),
+          size: rnd(7, 12), amp: rnd(6, 12), bob: rnd(2, 3.4), phase: Math.random() * 6.28,
+          color: cols[(Math.random() * cols.length) | 0],
+        });
+      }
+      // pollen / seeds drifting
+      const pollenN = Math.max(18, Math.round(W / 22));
+      for (let i = 0; i < pollenN; i++) {
+        this.pollen.push({ x: Math.random() * W, y: Math.random() * H, r: rnd(1.2, 3.2), sp: rnd(4, 16), seed: Math.random() * 6.28 });
+      }
+      // fireflies / sparkles
+      const moteN = Math.max(16, Math.round(W / 30));
       for (let i = 0; i < moteN; i++) {
-        this.motes.push({ x: Math.random() * W, y: Math.random() * H, r: rnd(0.6, 2.2), vx: rnd(-6, 6), vy: rnd(-4, 4), seed: Math.random() * 6.28 });
+        this.motes.push({ x: Math.random() * W, y: rnd(this.horizonY, H), r: rnd(0.8, 2.2), vx: rnd(-5, 5), vy: rnd(-4, 4), seed: Math.random() * 6.28 });
       }
     }
 
@@ -271,163 +378,153 @@
       if (dt > 0.05) dt = 0.05;
       this.time += dt;
       const W = this.W, H = this.H, margin = 18;
-      for (const f of this.fish) {
+      for (const f of this.fliers) {
         f.x += f.vx * dt;
         f.wy = f.y + Math.sin(this.time * f.bob + f.phase) * f.amp;
-        if (f.kind === 'far') {
-          if (f.x < -f.size * 2) f.x = W + f.size;
-          else if (f.x > W + f.size * 2) f.x = -f.size;
+        if (f.kind === 'bird') {
+          if (f.x < -f.size * 2) f.x = W + f.size; else if (f.x > W + f.size * 2) f.x = -f.size;
         } else {
-          // keep strictly in the side water column, never over the road
           const edge = this._roadEdgeX(f.wy, f.side);
           if (f.side < 0) {
             const max = (edge == null ? W : edge) - margin;
-            if (f.x > max) f.x = -f.size;          // wrap to the left edge
-            else if (f.x < -f.size * 2) f.x = max;
+            if (f.x > max) f.x = -f.size; else if (f.x < -f.size * 2) f.x = max;
           } else {
             const min = (edge == null ? 0 : edge) + margin;
-            if (f.x < min) f.x = W + f.size;        // wrap to the right edge
-            else if (f.x > W + f.size * 2) f.x = min;
+            if (f.x < min) f.x = W + f.size; else if (f.x > W + f.size * 2) f.x = min;
           }
         }
       }
-      for (const b of this.bubbles) {
-        b.y -= b.sp * dt;
-        b.x += Math.sin(this.time * 0.6 + b.seed) * 0.25;
-        if (b.y < -8) { b.y = this.H + 8; b.x = Math.random() * W; }
+      for (const p of this.pollen) {
+        p.y -= p.sp * dt * 0.4;
+        p.x += (Math.sin(this.time * 0.5 + p.seed) * 8) * dt;
+        if (p.y < -8) { p.y = H + 8; p.x = Math.random() * W; }
       }
-      if (this.motes) for (const m of this.motes) {
-        m.x += (m.vx + Math.sin(this.time * 0.4 + m.seed) * 3) * dt;
-        m.y += (m.vy + Math.cos(this.time * 0.3 + m.seed) * 3) * dt;
+      for (const m of this.motes) {
+        m.x += (m.vx + Math.sin(this.time * 0.5 + m.seed) * 4) * dt;
+        m.y += (m.vy + Math.cos(this.time * 0.4 + m.seed) * 4) * dt;
         if (m.x < -6) m.x = W + 6; else if (m.x > W + 6) m.x = -6;
-        if (m.y < -6) m.y = H + 6; else if (m.y > H + 6) m.y = -6;
+        if (m.y < this.horizonY - 10) m.y = H + 6; else if (m.y > H + 6) m.y = this.horizonY;
       }
     }
 
-    // ---------- DRAW (per frame) ----------
+    // ---------- DRAW ----------
     draw(ctx) {
       if (!this._built) return;
       ctx.drawImage(this.staticCanvas, 0, 0, this.W, this.H);
-      this._drawMotes(ctx);
-      this._drawFish(ctx);
-      this._drawGloss(ctx);
-      this._drawCaustics(ctx);
-      this._drawBubbles(ctx);
-      this._drawShimmer(ctx);
+      this._drawFliers(ctx);
+      this._drawSunDapples(ctx);
+      this._drawPollen(ctx);
+      this._drawFireflies(ctx);
+      this._drawSparkle(ctx);
       this._drawVignette(ctx);
     }
 
-    _drawMotes(ctx) {
-      if (!this.motes) return;
+    _drawFliers(ctx) {
+      ctx.save();
+      for (const f of this.fliers) {
+        const dir = f.vx < 0 ? -1 : 1;
+        const s = f.size;
+        ctx.save();
+        ctx.translate(f.x, f.wy);
+        ctx.scale(dir, 1);
+        if (f.kind === 'bird') {
+          // simple "V" gull silhouette, wings flap with time
+          const flap = Math.sin(this.time * 8 + f.phase) * s * 0.3;
+          ctx.strokeStyle = 'rgba(40,55,80,0.8)';
+          ctx.lineWidth = Math.max(1.4, s * 0.18); ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(-s, flap); ctx.quadraticCurveTo(-s * 0.3, -s * 0.3, 0, 0);
+          ctx.quadraticCurveTo(s * 0.3, -s * 0.3, s, flap);
+          ctx.stroke();
+        } else {
+          // butterfly: two wing pairs flapping
+          const flap = 0.5 + 0.5 * Math.abs(Math.sin(this.time * 9 + f.phase));
+          ctx.fillStyle = f.color;
+          ctx.globalAlpha = 0.92;
+          for (const sgn of [-1, 1]) {
+            ctx.save(); ctx.scale(sgn, 1);
+            ctx.beginPath(); ctx.ellipse(s * 0.5 * flap + s * 0.2, -s * 0.25, s * 0.45 * flap, s * 0.4, 0, 0, 7); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(s * 0.45 * flap + s * 0.2, s * 0.3, s * 0.35 * flap, s * 0.3, 0, 0, 7); ctx.fill();
+            ctx.restore();
+          }
+          ctx.globalAlpha = 1;
+          ctx.fillStyle = '#3a2a1a';
+          ctx.fillRect(-s * 0.05, -s * 0.45, s * 0.1, s * 0.9);
+        }
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    _drawSunDapples(ctx) {
+      const nL = this.roadNearL, nR = this.roadNearR, fL = this.roadFarL, fR = this.roadFarR;
+      ctx.save();
+      this._roundedTrap(ctx, nL, nR, fL, fR); ctx.clip();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 5; i++) {
+        const ph = this.time * 0.4 + i * 1.7;
+        const yy = this.horizonY + ((Math.sin(ph) * 0.5 + 0.5) * (this.groundY - this.horizonY));
+        const a = 0.04 + 0.04 * (0.5 + 0.5 * Math.sin(ph * 1.3));
+        const w = (this.W * 0.4) * ((yy - this.horizonY) / (this.groundY - this.horizonY) + 0.2);
+        const grd = ctx.createLinearGradient(this.centerX - w, yy, this.centerX + w, yy);
+        grd.addColorStop(0, 'rgba(255,245,200,0)');
+        grd.addColorStop(0.5, 'rgba(255,248,210,' + a.toFixed(3) + ')');
+        grd.addColorStop(1, 'rgba(255,245,200,0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(0, yy - 9, this.W, 18);
+      }
+      ctx.restore();
+    }
+
+    _drawPollen(ctx) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,250,210,0.7)';
+      for (const p of this.pollen) {
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    _drawFireflies(ctx) {
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       for (const m of this.motes) {
-        const a = 0.18 + 0.12 * (0.5 + 0.5 * Math.sin(this.time * 1.5 + m.seed));
+        const a = 0.2 + 0.25 * (0.5 + 0.5 * Math.sin(this.time * 2 + m.seed));
         ctx.globalAlpha = a;
-        ctx.fillStyle = 'rgba(150,245,255,1)';
+        ctx.fillStyle = 'rgba(220,255,160,1)';
+        ctx.shadowColor = '#d8ff80'; ctx.shadowBlur = 6;
         ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, 7); ctx.fill();
       }
       ctx.restore();
       ctx.globalAlpha = 1;
     }
 
-    _drawGloss(ctx) {
-      // premium glass: a soft specular highlight sweeping down the road
-      const nL = this.roadNearL, nR = this.roadNearR, fL = this.roadFarL, fR = this.roadFarR;
-      ctx.save();
-      this._roundedTrap(ctx, nL, nR, fL, fR); ctx.clip();
-      ctx.globalCompositeOperation = 'lighter';
-      const sweep = (this.time * 0.12) % 1.4 - 0.2;     // 0..1.2 loop
-      const yy = this.horizonY + (this.groundY - this.horizonY) * sweep;
-      const grd = ctx.createLinearGradient(0, yy - this.H * 0.12, 0, yy + this.H * 0.12);
-      grd.addColorStop(0, 'rgba(120,240,255,0)');
-      grd.addColorStop(0.5, 'rgba(150,250,255,0.07)');
-      grd.addColorStop(1, 'rgba(120,240,255,0)');
-      ctx.fillStyle = grd;
-      ctx.fillRect(0, yy - this.H * 0.12, this.W, this.H * 0.24);
-      ctx.restore();
-    }
-
-    _drawVignette(ctx) {
-      const vg = ctx.createRadialGradient(this.W / 2, this.H * 0.55, Math.min(this.W, this.H) * 0.32, this.W / 2, this.H * 0.55, Math.max(this.W, this.H) * 0.72);
-      vg.addColorStop(0, 'transparent');
-      vg.addColorStop(1, 'rgba(2,0,14,0.5)');
-      ctx.fillStyle = vg;
-      ctx.fillRect(0, 0, this.W, this.H);
-    }
-
-    _drawFish(ctx) {
-      ctx.save();
-      for (const f of this.fish) {
-        const dir = f.vx < 0 ? -1 : 1;
-        const s = f.size;
-        ctx.globalAlpha = f.alpha;
-        ctx.fillStyle = f.color;
-        ctx.save();
-        ctx.translate(f.x, f.wy);
-        ctx.scale(dir, 1);
-        // body
-        ctx.beginPath(); ctx.ellipse(0, 0, s, s * 0.55, 0, 0, 7); ctx.fill();
-        // tail
-        ctx.beginPath(); ctx.moveTo(-s * 0.8, 0); ctx.lineTo(-s * 1.5, -s * 0.5); ctx.lineTo(-s * 1.5, s * 0.5); ctx.closePath(); ctx.fill();
-        // eye
-        ctx.globalAlpha = f.alpha * 0.9; ctx.fillStyle = '#04122a';
-        ctx.beginPath(); ctx.arc(s * 0.55, -s * 0.1, s * 0.12, 0, 7); ctx.fill();
-        ctx.restore();
-        ctx.fillStyle = f.color;
-      }
-      ctx.restore();
-      ctx.globalAlpha = 1;
-    }
-
-    _drawCaustics(ctx) {
-      // subtle moving light ripples on the glass road (clipped to the road)
-      const nL = this.roadNearL, nR = this.roadNearR, fL = this.roadFarL, fR = this.roadFarR;
-      ctx.save();
-      this._roundedTrap(ctx, nL, nR, fL, fR); ctx.clip();
-      ctx.globalCompositeOperation = 'lighter';
-      const bands = 4;
-      for (let i = 0; i < bands; i++) {
-        const phase = this.time * 0.5 + i * 1.7;
-        const yy = this.horizonY + ((Math.sin(phase) * 0.5 + 0.5) * (this.groundY - this.horizonY));
-        const a = 0.05 + 0.04 * (0.5 + 0.5 * Math.sin(phase * 1.3));
-        const w = (this.W * 0.5) * ((yy - this.horizonY) / (this.groundY - this.horizonY) + 0.2);
-        const grd = ctx.createLinearGradient(this.centerX - w, yy, this.centerX + w, yy);
-        grd.addColorStop(0, 'rgba(80,240,255,0)');
-        grd.addColorStop(0.5, 'rgba(120,250,255,' + a.toFixed(3) + ')');
-        grd.addColorStop(1, 'rgba(80,240,255,0)');
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, yy - 10, this.W, 20);
-      }
-      ctx.restore();
-    }
-
-    _drawBubbles(ctx) {
-      ctx.save();
-      ctx.strokeStyle = 'rgba(120,240,255,0.45)';
-      ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 5; ctx.lineWidth = 1.3;
-      for (const b of this.bubbles) {
-        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, 7); ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    _drawShimmer(ctx) {
-      // gentle pulsing glow on the neon cyan/magenta strips (no geometry change)
+    _drawSparkle(ctx) {
+      // gentle warm shimmer along the grassy path edges
       if (!this._rail) return;
-      const pulse = 0.5 + 0.5 * Math.sin(this.time * 1.6);
+      const pulse = 0.5 + 0.5 * Math.sin(this.time * 1.4);
       const r = this._rail;
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.10 + 0.12 * pulse;
-      ctx.strokeStyle = '#16f2d6';
-      ctx.shadowColor = '#16f2d6'; ctx.shadowBlur = 16; ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.06 + 0.08 * pulse;
+      ctx.strokeStyle = '#fff7c8';
+      ctx.lineWidth = 2; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(r.nL.x, r.nL.y); ctx.lineTo(r.fL.x, r.fL.y); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(r.nR.x, r.nR.y); ctx.lineTo(r.fR.x, r.fR.y); ctx.stroke();
       ctx.restore();
     }
+
+    _drawVignette(ctx) {
+      // very soft, warm corner darkening (keeps the bright sky bright)
+      const vg = ctx.createRadialGradient(this.W / 2, this.H * 0.5, Math.min(this.W, this.H) * 0.42, this.W / 2, this.H * 0.5, Math.max(this.W, this.H) * 0.75);
+      vg.addColorStop(0, 'transparent');
+      vg.addColorStop(1, 'rgba(20,40,20,0.28)');
+      ctx.fillStyle = vg;
+      ctx.fillRect(0, 0, this.W, this.H);
+    }
   }
 
   window.BlobbieDashUnderwaterBackground = BlobbieDashUnderwaterBackground;
+  window.BlobbieDashWorldBackground = BlobbieDashUnderwaterBackground;
   window.createUnderwaterTunnelBackground = function () { return new BlobbieDashUnderwaterBackground(); };
 })();

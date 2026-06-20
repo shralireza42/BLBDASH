@@ -84,7 +84,7 @@
       this.canvas.height = Math.round(h * dpr);
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       this.W = w; this.H = h;
-      this.horizonY = h * 0.34;
+      this.horizonY = h * 0.40; // matches the shared world background's horizon
       this.groundY = h * 0.97;
       this.centerX = w / 2;
       this.spread = w * 0.27;
@@ -314,7 +314,7 @@
         this.particles.push({
           x: p.x, y: p.y,
           vx: (Math.random() - 0.5) * 130, vy: -Math.random() * 170,
-          life: 0.5, color: i % 2 ? '#16f2d6' : '#ffe27a', r: 2 + Math.random() * 2.5, glow: true,
+          life: 0.5, color: i % 2 ? '#ffd23f' : '#fff3c0', r: 2 + Math.random() * 2.5, glow: true,
         });
       }
       // pickup pop ring
@@ -331,7 +331,7 @@
         this.particles.push({
           x: p.x, y: p.y - 20,
           vx: (Math.random() - 0.5) * 340, vy: -Math.random() * 300,
-          life: 0.9, color: i % 2 ? '#ff4fd8' : '#16f2d6', r: 3 + Math.random() * 3, glow: true,
+          life: 0.9, color: i % 2 ? '#ff9ed1' : '#ffe27a', r: 3 + Math.random() * 3, glow: true,
         });
       }
       const result = { score: this.score, distance: Math.floor(this.traveled), coins: this.coins };
@@ -416,10 +416,10 @@
     // Scrolling neon cross-lines on the (static) shared road for a forward-motion
     // feel during gameplay. The road/tunnel/strips themselves live in this.bg.
     _drawSpeedLines(ctx) {
-      if (this.frozen) return; // road is calm in the menu / during the countdown
+      if (this.frozen) return; // path is calm in the menu / during the countdown
       ctx.save();
-      ctx.strokeStyle = 'rgba(22,242,214,0.45)';
-      ctx.shadowColor = '#16f2d6'; ctx.shadowBlur = 8; ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(255,250,225,0.32)';
+      ctx.shadowColor = '#fff7d0'; ctx.shadowBlur = 6; ctx.lineWidth = 1.4;
       const dashStart = this.traveled % 3;
       for (let z = VIEW - dashStart; z > PLAYER_Z; z -= 3) {
         const a = this._project(z, -1.55, 0);
@@ -431,11 +431,11 @@
       ctx.globalAlpha = 1;
     }
 
-    // pick a deterministic sea-creature variant per obstacle
+    // pick a deterministic nature-obstacle variant per obstacle
     _seaKind(e) {
-      if (e.type === 'jump') return e.id % 2 ? 'puffer' : 'clam';
-      if (e.type === 'slide') return e.id % 2 ? 'jelly' : 'kelp';
-      return e.id % 2 ? 'coral' : 'rock';
+      if (e.type === 'jump') return e.id % 2 ? 'rock' : 'log';      // jump over
+      if (e.type === 'slide') return e.id % 2 ? 'branch' : 'arch';  // slide under
+      return e.id % 2 ? 'tree' : 'boulder';                          // dodge by lane
     }
 
     _neon(ctx, color, blur) { ctx.shadowColor = color; ctx.shadowBlur = blur; }
@@ -445,83 +445,83 @@
       const s = p.scale;
       const kind = this._seaKind(e);
       const x = p.x, y = p.y;
+      const ink = '#3a2a1a';
 
-      // contact shadow on the road (grounds the obstacle)
+      // soft contact shadow on the path (grounds the obstacle)
       ctx.save();
-      ctx.globalAlpha = this._fog(z) * 0.4;
+      ctx.globalAlpha = this._fog(z) * 0.35;
       ctx.fillStyle = '#000';
-      ctx.beginPath(); ctx.ellipse(x, y + 3 * s, 44 * s, 13 * s, 0, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x, y + 3 * s, 44 * s, 12 * s, 0, 0, 7); ctx.fill();
       ctx.restore();
 
       ctx.save();
-      ctx.globalAlpha = this._fog(z); // emerge from the underwater haze
+      ctx.globalAlpha = this._fog(z); // fade in from the distance
       ctx.lineWidth = Math.max(1, 2 * s);
+      ctx.strokeStyle = ink;
 
-      if (kind === 'puffer') {            // jump over: spiky pufferfish on the seabed
-        const r = 30 * s;
-        this._neon(ctx, '#ffb030', 18);
-        ctx.fillStyle = '#ff8c1a'; ctx.strokeStyle = '#fff0c0';
-        // spikes
-        for (let i = 0; i < 12; i++) {
-          const a = (i / 12) * Math.PI * 2;
-          ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * r, y - r + Math.sin(a) * r);
-          ctx.lineTo(x + Math.cos(a) * r * 1.4, y - r + Math.sin(a) * r * 1.4); ctx.stroke();
-        }
-        ctx.beginPath(); ctx.arc(x, y - r, r, 0, 7); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#fff'; this._neon(ctx, '#fff', 0);
-        ctx.beginPath(); ctx.arc(x - r * 0.35, y - r * 1.1, r * 0.18, 0, 7); ctx.arc(x + r * 0.35, y - r * 1.1, r * 0.18, 0, 7); ctx.fill();
-      } else if (kind === 'clam') {       // jump over: glowing clam shell
-        const w = 70 * s, h = 40 * s;
-        this._neon(ctx, '#ff6fae', 16);
-        ctx.fillStyle = '#ff8fc6'; ctx.strokeStyle = '#ffd9ec';
-        ctx.beginPath(); ctx.moveTo(x - w / 2, y);
-        ctx.quadraticCurveTo(x, y - h * 2, x + w / 2, y);
+      if (kind === 'rock') {              // jump over: low mossy rock
+        const w = 70 * s, h = 38 * s;
+        ctx.fillStyle = '#8d8f97';
+        ctx.beginPath();
+        ctx.moveTo(x - w / 2, y);
+        ctx.lineTo(x - w * 0.32, y - h * 0.85);
+        ctx.lineTo(x + w * 0.05, y - h);
+        ctx.lineTo(x + w * 0.4, y - h * 0.7);
+        ctx.lineTo(x + w / 2, y);
         ctx.closePath(); ctx.fill(); ctx.stroke();
-        for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + i * w * 0.2, y - h * 1.3); ctx.stroke(); }
-        this._neon(ctx, '#16f2d6', 14); ctx.fillStyle = '#bff9ff';
-        ctx.beginPath(); ctx.arc(x, y - h * 0.4, 6 * s, 0, 7); ctx.fill(); // pearl
-      } else if (kind === 'jelly') {      // slide under: hanging jellyfish
-        const top = y - 168 * s, w = 70 * s, domeH = 40 * s;
-        this._neon(ctx, '#ff4fd8', 18);
-        ctx.fillStyle = 'rgba(255,120,230,0.85)'; ctx.strokeStyle = '#ffd0f4';
-        ctx.beginPath(); ctx.ellipse(x, top + domeH, w / 2, domeH, 0, Math.PI, 0); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#5fb85a'; // moss cap
+        ctx.beginPath(); ctx.ellipse(x - w * 0.05, y - h * 0.9, w * 0.34, h * 0.28, 0, 0, 7); ctx.fill();
+      } else if (kind === 'log') {        // jump over: fallen log
+        const w = 78 * s, h = 30 * s;
+        ctx.fillStyle = '#9c6b3f';
+        this._roundRect(ctx, x - w / 2, y - h, w, h, h * 0.5, true, true);
+        ctx.fillStyle = '#c79a63';
+        ctx.beginPath(); ctx.ellipse(x - w / 2 + h * 0.5, y - h * 0.5, h * 0.34, h * 0.42, 0, 0, 7); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#7a5230';
+        ctx.beginPath(); ctx.arc(x - w / 2 + h * 0.5, y - h * 0.5, h * 0.18, 0, 7); ctx.stroke();
+      } else if (kind === 'branch') {     // slide under: low leafy branch
+        const top = y - 162 * s, w = 80 * s;
+        ctx.strokeStyle = '#7a5230'; ctx.lineWidth = Math.max(2, 6 * s);
+        ctx.beginPath(); ctx.moveTo(x - w * 0.7, top); ctx.lineTo(x + w * 0.7, top); ctx.stroke();
+        ctx.fillStyle = '#3aa657';
         for (let i = -3; i <= 3; i++) {
-          ctx.beginPath(); ctx.moveTo(x + i * w * 0.12, top + domeH);
-          for (let k = 0; k < 4; k++) {
-            const ty = top + domeH + (k + 1) * 20 * s;
-            ctx.quadraticCurveTo(x + i * w * 0.12 + Math.sin(this.time * 4 + k + i) * 6 * s, ty - 10 * s, x + i * w * 0.12 + Math.sin(this.time * 4 + k + i) * 6 * s, ty);
-          }
-          ctx.stroke();
+          const lx = x + i * w * 0.2;
+          ctx.beginPath(); ctx.ellipse(lx, top + 12 * s, 14 * s, 9 * s, 0.5, 0, 7); ctx.fill();
         }
-      } else if (kind === 'kelp') {       // slide under: overhead glowing kelp arch
-        const top = y - 170 * s, w = 78 * s;
-        this._neon(ctx, '#39ff9e', 16);
-        ctx.strokeStyle = '#7dffc4'; ctx.lineWidth = Math.max(2, 5 * s);
+      } else if (kind === 'arch') {       // slide under: flowering vine arch
+        const top = y - 168 * s, w = 84 * s;
+        ctx.strokeStyle = '#2f8f48'; ctx.lineWidth = Math.max(2, 5 * s);
         for (const sx of [-1, 1]) {
           ctx.beginPath(); ctx.moveTo(x + sx * w / 2, y);
           ctx.quadraticCurveTo(x + sx * w * 0.7, top + 40 * s, x, top);
           ctx.stroke();
         }
-        ctx.fillStyle = 'rgba(57,255,158,0.5)';
-        ctx.beginPath(); ctx.ellipse(x, top, w * 0.5, 14 * s, 0, 0, 7); ctx.fill();
-      } else if (kind === 'coral') {      // dodge: tall neon coral pillar
-        const h = 130 * s, w = 60 * s;
-        this._neon(ctx, '#b14dff', 18);
-        ctx.fillStyle = '#8a3dff'; ctx.strokeStyle = '#e0c0ff';
-        this._roundRect(ctx, x - w / 2, y - h, w, h, 14 * s, true, true);
-        ctx.strokeStyle = '#ff7de0'; ctx.lineWidth = Math.max(1, 2 * s);
-        for (let i = 0; i < 4; i++) { const yy = y - h * (0.2 + i * 0.2); ctx.beginPath(); ctx.moveTo(x - w / 2, yy); ctx.lineTo(x - w, yy - 10 * s); ctx.moveTo(x + w / 2, yy); ctx.lineTo(x + w, yy - 10 * s); ctx.stroke(); }
-      } else {                            // rock: dodge, jagged glowing boulder
-        const h = 120 * s, w = 78 * s;
-        this._neon(ctx, '#3affd8', 16);
-        ctx.fillStyle = '#1c2b5a'; ctx.strokeStyle = '#3affd8';
+        const cols = ['#ff9ed1', '#ffe27a', '#bfe0ff'];
+        for (let i = 0; i < 6; i++) {
+          ctx.fillStyle = cols[i % 3];
+          ctx.beginPath(); ctx.arc(x - w * 0.4 + i * w * 0.16, top + 8 * s + Math.sin(i) * 6 * s, 5 * s, 0, 7); ctx.fill();
+        }
+      } else if (kind === 'tree') {       // dodge: tall tree
+        const h = 140 * s, w = 26 * s;
+        ctx.fillStyle = '#7a5230';
+        ctx.fillRect(x - w / 2, y - h * 0.55, w, h * 0.55);
+        const greens = ['#2f8f48', '#3aa657', '#56c46a'];
+        for (let i = 0; i < 3; i++) {
+          ctx.fillStyle = greens[i];
+          ctx.beginPath(); ctx.arc(x, y - h * (0.55 + i * 0.16), (46 - i * 8) * s, 0, 7); ctx.fill();
+        }
+      } else {                            // boulder: dodge, big mossy boulder
+        const h = 120 * s, w = 92 * s;
+        ctx.fillStyle = '#9a9ca3';
         ctx.beginPath();
         ctx.moveTo(x - w / 2, y);
-        ctx.lineTo(x - w * 0.4, y - h * 0.75);
+        ctx.lineTo(x - w * 0.42, y - h * 0.7);
         ctx.lineTo(x - w * 0.05, y - h);
-        ctx.lineTo(x + w * 0.35, y - h * 0.7);
+        ctx.lineTo(x + w * 0.4, y - h * 0.72);
         ctx.lineTo(x + w / 2, y);
         ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#5fb85a';
+        ctx.beginPath(); ctx.ellipse(x, y - h * 0.92, w * 0.36, h * 0.16, 0, 0, 7); ctx.fill();
       }
       ctx.restore();
     }
@@ -541,18 +541,18 @@
       ctx.save();
       ctx.globalAlpha = fog;
       ctx.translate(p.x, p.y);
-      // neon glow halo
-      this._neon(ctx, '#16f2d6', 20);
+      // warm golden glow halo
+      this._neon(ctx, '#ffcf4d', 16);
       ctx.scale(sx, 1);
       const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.2, 0, 0, r);
-      g.addColorStop(0, '#eafff9');
-      g.addColorStop(0.55, '#ffe27a');
-      g.addColorStop(1, '#15c2b0');
+      g.addColorStop(0, '#fff6cf');
+      g.addColorStop(0.55, '#ffd23f');
+      g.addColorStop(1, '#e0951f');
       ctx.fillStyle = g;
-      ctx.strokeStyle = '#16f2d6'; ctx.lineWidth = Math.max(1, 2 * p.scale);
+      ctx.strokeStyle = '#b9731a'; ctx.lineWidth = Math.max(1, 2 * p.scale);
       ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill(); ctx.stroke();
       ctx.shadowBlur = 0;
-      ctx.fillStyle = '#0a6b5e';
+      ctx.fillStyle = '#7a4d10';
       ctx.font = 'bold ' + Math.max(8, 15 * p.scale) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('B', 0, 1);
