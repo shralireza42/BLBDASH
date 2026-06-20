@@ -200,6 +200,8 @@
     state.finished = false;
     state.opps = {};
     showScreen('game');
+    $('pauseOverlay').classList.add('hidden');
+    $('btnPause').style.display = opts.solo ? '' : 'none'; // pause only in solo
     $('hudRivals').style.display = opts.solo ? 'none' : 'flex';
     $('hudRivals').innerHTML = '';
     $('hudScore').textContent = '0';
@@ -362,8 +364,21 @@
     else refreshMe();
   }
 
+  function pauseGame() {
+    if (!state.game || state.mode !== 'solo') return;
+    if (state.game.frozen || !state.game.alive) return;
+    state.game.setPaused(true);
+    $('pauseOverlay').classList.remove('hidden');
+  }
+  function resumeGame() {
+    if (!state.game) return;
+    state.game.setPaused(false);
+    $('pauseOverlay').classList.add('hidden');
+  }
+
   function quitGame() {
     if (state.match) Net.send('match:forfeit', { matchId: state.match.matchId });
+    $('pauseOverlay').classList.add('hidden');
     destroyGame();
     state.match = null;
     state.mode = null;
@@ -540,6 +555,15 @@
     $('btnStartRoom').onclick = () => { Net.send('room:start'); };
 
     $('btnQuit').onclick = quitGame;
+    $('btnPause').onclick = pauseGame;
+    $('btnResume').onclick = resumeGame;
+    $('btnPauseQuit').onclick = quitGame;
+    window.addEventListener('keydown', (e) => {
+      if (!$('screen-game').classList.contains('active')) return;
+      if (e.key === 'Escape' || e.key.toLowerCase() === 'p') {
+        if ($('pauseOverlay').classList.contains('hidden')) pauseGame(); else resumeGame();
+      }
+    });
     $('btnBackMenu').onclick = () => { state.match = null; state.mode = null; showScreen('menu'); refreshMe(); };
     $('btnPlayAgain').onclick = () => { const m = state.mode || 'solo'; state.match = null; chooseMode(m); };
 

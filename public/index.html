@@ -155,7 +155,19 @@
           <button class="tc tc-right" data-act="right">▶</button>
         </div>
 
-        <button class="btn btn-mini quit-btn" id="btnQuit">Quit</button>
+        <div class="game-top-btns">
+          <button class="btn btn-mini" id="btnPause">⏸ Pause</button>
+          <button class="btn btn-mini" id="btnQuit">Quit</button>
+        </div>
+
+        <!-- pause overlay -->
+        <div id="pauseOverlay" class="pause-overlay hidden">
+          <div class="card center pause-card">
+            <h2>Paused</h2>
+            <button class="btn btn-primary btn-block" id="btnResume">▶ Resume</button>
+            <button class="btn btn-ghost btn-block" id="btnPauseQuit">Quit to Menu</button>
+          </div>
+        </div>
       </div>
     </section>
 
