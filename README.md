@@ -7,17 +7,18 @@ challenge a friend with a room code, and climb the weekly tournament leaderboard
 
 Built to be **dropped into any website** as a single embeddable iframe.
 
-![Blobbie Dash gameplay](docs/neon-game.png)
-![Blobbie Dash menu](docs/neon-menu.png)
+![Blobbie Dash gameplay](docs/nature-game.png)
+![Blobbie Dash menu](docs/nature-menu.png)
 
 ---
 
 ## Features
 
-- 🌊 **Neon underwater theme** — a synthwave seabed with glowing grid lanes, magenta rails,
-  bioluminescent lighting, parallax reef, god rays and rising bubbles. Obstacles are **sea
-  creatures**: jump over pufferfish & clams, slide under jellyfish & kelp arches, and dodge
-  neon coral/rock walls by switching lanes.
+- 🌳 **Fantastical nature world** — blue sky, a warm sun with soft rays, drifting clouds,
+  snow-capped mountains, rolling green hills, and a winding earthy **path** lined with
+  stylized trees and flowering vine archways. Obstacles are **nature props**: jump over
+  rocks & logs, slide under leafy branches & vine arches, and dodge tall trees / boulders by
+  switching lanes. Birds glide overhead, butterflies and fireflies drift by the path.
 - 🔊 **Sound & music** — a fully synthesized (Web Audio) sound engine: jump/slide/coin/crash
   SFX, win/lose stings, countdown beeps, and a looping synthwave track. Mute toggle in the
   top bar. No audio files to ship.
