@@ -212,6 +212,7 @@
         onUpdate: onGameUpdate,
         onGameOver: onGameOver,
       });
+      window.BlobbieGameInstance = state.game; // handy for debugging / embedders
       if (opts.solo) {
         runCountdown(3000, () => state.game.start());
       } else {
@@ -257,11 +258,12 @@
     $('hudDist').textContent = s.distance;
     if (state.mode === 'ranked' || state.mode === 'friend') {
       const now = performance.now();
-      if (now - state.lastProgressSent > 120 && state.match) {
+      if (now - state.lastProgressSent > 70 && state.match) {
         state.lastProgressSent = now;
         Net.send('match:progress', {
           matchId: state.match.matchId, score: s.score, distance: s.distance,
-          coins: s.coins, alive: true,
+          coins: s.coins, lane: s.lane, air: s.air, sliding: s.sliding,
+          frame: s.frame, alive: true,
         });
       }
     }
@@ -387,7 +389,8 @@
     });
     Net.on('opponent:finished', (d) => {
       $('oppTag').textContent = 'finished';
-      if (state.game) state.game.setOpponent(Object.assign({ alive: false }, d));
+      // keep their last lane/frame so the ghost freezes in place, marked OUT
+      if (state.game) state.game.setOpponent(Object.assign({}, state.opp || {}, d, { alive: false }));
     });
     Net.on('match:result', (d) => showPvpResult(d));
     Net.on('match:cancelled', (d) => {

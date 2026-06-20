@@ -139,7 +139,18 @@
       }
     }
 
-    setOpponent(o) { this.opponent = o; }
+    setOpponent(o) {
+      if (!o) return;
+      this._oppTarget = o;
+      if (!this.opponent) { this.opponent = Object.assign({}, o); return; }
+      // discrete fields update immediately; lane/air/distance are smoothed in _step
+      this.opponent.name = o.name;
+      this.opponent.alive = o.alive;
+      this.opponent.score = o.score;
+      this.opponent.coins = o.coins;
+      this.opponent.frame = o.frame;
+      this.opponent.sliding = o.sliding;
+    }
 
     // ---- lifecycle ----
     start() {
@@ -219,8 +230,22 @@
       for (const p of this.particles) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 240 * dt; }
       this.particles = this.particles.filter((p) => p.life > 0);
 
+      // smooth the opponent ghost toward its latest networked state
+      if (this._oppTarget && this.opponent) {
+        const tg = this._oppTarget, o = this.opponent, k = Math.min(1, dt * 10);
+        const tl = tg.lane == null ? 1 : tg.lane, ol = o.lane == null ? 1 : o.lane;
+        o.lane = ol + (tl - ol) * k;
+        o.air = (o.air || 0) + (((tg.air || 0) - (o.air || 0)) * k);
+        const td = tg.distance || 0, od = o.distance == null ? td : o.distance;
+        o.distance = od + (td - od) * k;
+      }
+
       this.score = Math.floor(this.traveled) + this.coins * S.COIN_VALUE;
-      this.onUpdate({ score: this.score, distance: Math.floor(this.traveled), coins: this.coins, speed });
+      this.onUpdate({
+        score: this.score, distance: Math.floor(this.traveled), coins: this.coins, speed,
+        lane: this.lane, air: this.air, sliding: this.sliding,
+        frame: this.animator ? this.animator.currentFrame() : null,
+      });
     }
 
     _collisions() {
@@ -561,24 +586,38 @@
     }
 
     _drawGhost(ctx) {
-      // Show opponent as a translucent Blobbie positioned ahead/behind based on
-      // relative distance, plus a label.
+      // Live rival on the SAME track: positioned by their relative distance, in
+      // their actual lane, with their real jump height & animation frame.
       const o = this.opponent;
-      if (o.distance == null) return;
-      const rel = o.distance - this.traveled; // +ve = opponent ahead
-      const z = Math.max(PLAYER_Z + 1.5, Math.min(VIEW - 6, PLAYER_Z + 6 - rel * 0.04));
-      const p = this._project(z, S.LANE_OFFSETS[0] + 1, 0); // centre lane far
-      const size = this.H * 0.16 * p.scale * 2.2;
-      const ghostFrame = (window.Character && window.Character.frameAtTime)
-        ? window.Character.frameAtTime('run', this.time) : null;
+      if (!o || o.distance == null) return;
+      const dead = o.alive === false;
+      const rel = o.distance - this.traveled;     // +ve = rival is ahead of me
+      const zg = Math.max(PLAYER_Z + 0.4, Math.min(VIEW - 3, PLAYER_Z + rel));
+      const laneWorld = (o.lane == null ? 1 : o.lane) - 1;
+      const air = dead ? 0 : (o.air || 0);
+      const p = this._project(zg, laneWorld, air);
+      const playerScale = FOCAL / (FOCAL + PLAYER_Z);
+      const size = this.H * 0.18 * (p.scale / playerScale);
+      const frame = o.frame || (window.Character && window.Character.frameAtTime
+        ? window.Character.frameAtTime('run', this.time) : null);
+
       window.Blobbie.draw(ctx, p.x, p.y, size, {
-        frame: ghostFrame, state: o.alive === false ? 'slide' : 'run', time: this.time,
-        alpha: 0.55, tint: '#39d98a',
+        frame, state: dead ? 'slide' : 'run', time: this.time,
+        alpha: dead ? 0.35 : 0.72, tint: '#39ff9e',
       });
-      ctx.fillStyle = 'rgba(57,217,138,0.95)';
-      ctx.font = 'bold 12px system-ui, sans-serif';
+
+      const gap = Math.round(rel);
+      let label = o.name || 'Rival';
+      if (dead) label += ' • OUT';
+      else if (gap > 1) label += ' • ' + gap + 'm ahead';
+      else if (gap < -1) label += ' • ' + (-gap) + 'm behind';
+      ctx.save();
+      ctx.fillStyle = 'rgba(57,255,158,0.95)';
+      ctx.font = 'bold ' + Math.max(10, 13 * p.scale) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText((o.name || 'Rival') + (o.alive === false ? ' (out)' : ''), p.x, p.y - size - 4);
+      ctx.shadowColor = '#39ff9e'; ctx.shadowBlur = 8;
+      ctx.fillText(label, p.x, p.y - size - 6);
+      ctx.restore();
     }
 
     _drawParticles(ctx) {

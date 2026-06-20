@@ -267,6 +267,11 @@ io.on('connection', (socket) => {
     io.to(opp.socketId).emit('opponent:progress', {
       name: pl.name, score: pl.result.score, distance: pl.result.distance,
       coins: pl.result.coins, alive: pl.alive,
+      // live pose so the rival can be rendered moving on the same track
+      lane: typeof msg.lane === 'number' ? msg.lane : 1,
+      air: typeof msg.air === 'number' ? msg.air : 0,
+      sliding: !!msg.sliding,
+      frame: typeof msg.frame === 'string' ? msg.frame : null,
     });
   });
 
