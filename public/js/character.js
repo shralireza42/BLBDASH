@@ -45,11 +45,13 @@
 
   const MANIFEST_URL = 'assets/character/manifest.json';
   const BASE = 'assets/character/';
+  const FALLBACK_SRC = 'assets/blobbie.svg'; // used when a frame SVG is missing
 
   const byName = Object.create(null); // name -> { meta, img, ok }
   let manifest = [];
   let ready = false;
   let loadPromise = null;
+  let fallbackImg = null;
 
   function loadImage(src) {
     return new Promise((resolve) => {
@@ -75,9 +77,36 @@
       } catch (e) { manifest = []; }
       manifest.forEach((m) => { byName[m.name] = { meta: m, img: null, ok: false }; });
       ready = manifest.length > 0;
-      await Promise.all(manifest.map(loadOne));
+      const jobs = manifest.map(loadOne);
+      jobs.push(loadImage(FALLBACK_SRC).then((img) => { fallbackImg = img; }));
+      await Promise.all(jobs);
     })();
     return loadPromise;
+  }
+
+  function hasFallback() {
+    return !!(fallbackImg && fallbackImg.complete && fallbackImg.naturalWidth > 0);
+  }
+
+  // Draw the blobbie.svg fallback, anchored at the feet, scaled to targetH.
+  function drawFallback(ctx, footX, footY, targetH, opts) {
+    if (!hasFallback()) return false;
+    opts = opts || {};
+    const iw = fallbackImg.naturalWidth, ih = fallbackImg.naturalHeight;
+    const w = targetH * (iw / ih), h = targetH;
+    const dx = footX - w / 2, dy = footY - h;
+    ctx.save();
+    ctx.globalAlpha = opts.alpha == null ? 1 : opts.alpha;
+    ctx.drawImage(fallbackImg, dx, dy, w, h);
+    if (opts.tint) {
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.globalAlpha = (opts.alpha == null ? 1 : opts.alpha) * 0.5;
+      ctx.fillStyle = opts.tint;
+      ctx.fillRect(dx, dy, w, h);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    ctx.restore();
+    return true;
   }
 
   function resolveName(roleOrName) { return ROLES[roleOrName] || roleOrName; }
@@ -179,6 +208,7 @@
 
   window.Character = {
     ANIM, ROLES, Animator, load, draw, drawContained, frameAtTime, has, get,
+    hasFallback, drawFallback,
     get ready() { return ready; },
     get manifest() { return manifest; },
     image(name) { const e = get(name); return e ? e.img : null; },

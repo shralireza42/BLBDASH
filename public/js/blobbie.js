@@ -72,6 +72,11 @@
       if (window.Character.draw(ctx, opts.frame, x, y, size, { alpha, tint: opts.tint })) return;
     }
 
+    // 1b) if that animation frame SVG is missing, fall back to blobbie.svg
+    if (window.Character && window.Character.hasFallback()) {
+      if (window.Character.drawFallback(ctx, x, y, size, { alpha, tint: opts.tint })) return;
+    }
+
     // 2) fallback: classic sprite / procedural blob (with squash & stretch)
     let sx = 1, sy = 1, lean = 0, bob = 0;
     if (opts.state === 'jump') { sy = 1.12; sx = 0.92; lean = -0.05; }
