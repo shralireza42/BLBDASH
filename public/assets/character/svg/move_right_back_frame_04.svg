@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="240" height="340" viewBox="0 0 240 340">
-  <rect x="1.5" y="1.5" width="237" height="337" rx="14.399999999999999"
-        fill="#ffd23f" fill-opacity="0.08" stroke="#ffd23f" stroke-opacity="0.5"
-        stroke-width="2" stroke-dasharray="6 5"/>
   <g transform="rotate(6.84 120 265.2)">
     <!-- legs -->
     <rect x="66" y="265.2" width="31.200000000000003" height="54.4" rx="15.600000000000001" fill="#ffd23f" stroke="#1d1d28" stroke-width="3"/>

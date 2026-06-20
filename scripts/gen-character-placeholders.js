@@ -57,9 +57,6 @@ function frameSvg(item) {
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-  <rect x="1.5" y="1.5" width="${w - 3}" height="${h - 3}" rx="${Math.min(w, h) * 0.06}"
-        fill="${item.color}" fill-opacity="0.08" stroke="${item.color}" stroke-opacity="0.5"
-        stroke-width="2" stroke-dasharray="6 5"/>
   <g transform="rotate(${(lean * 57).toFixed(2)} ${cx} ${legY})">
     <!-- legs -->
     <rect x="${cx - bodyW * 0.32 - legW / 2}" y="${leftLegY}" width="${legW}" height="${legH}" rx="${legW / 2}" fill="${item.color}" stroke="${ink}" stroke-width="3"/>
