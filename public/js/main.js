@@ -224,8 +224,9 @@
         onGameOver: onGameOver,
       });
       window.BlobbieGameInstance = state.game; // handy for debugging / embedders
+      state.game.start(); // render the shared background right away (frozen until "GO")
       if (opts.solo) {
-        runCountdown(3000, () => state.game.start());
+        runCountdown(3000, () => state.game.begin());
       } else {
         // PvP: tell server we're ready; wait for synced match:start
         Net.send('match:ready', { matchId: state.match.matchId });
@@ -396,7 +397,7 @@
     });
     Net.on('match:start', (d) => {
       const remain = Math.max(0, (d.startAt || Date.now()) - Date.now());
-      runCountdown(remain || 3000, () => { if (state.game) state.game.start(); });
+      runCountdown(remain || 3000, () => { if (state.game) state.game.begin(); });
     });
     Net.on('opponent:progress', (d) => {
       const id = d.id == null ? '_' : d.id;

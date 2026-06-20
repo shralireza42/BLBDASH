@@ -39,6 +39,9 @@
       this._boundTouch = {};
       this.running = false;
       this.paused = false;
+      this.frozen = true; // shows the scene during the countdown without advancing gameplay
+      // ONE shared underwater-tunnel background (same renderer as the menu)
+      this.bg = window.BlobbieDashUnderwaterBackground ? new window.BlobbieDashUnderwaterBackground() : null;
       this.reset();
       this._fitCanvas();
       this._resizeHandler = () => this._fitCanvas();
@@ -81,6 +84,7 @@
       this.groundY = h * 0.97;
       this.centerX = w / 2;
       this.spread = w * 0.27;
+      if (this.bg) this.bg.setSize(w, h, dpr);
     }
 
     // ---- input ----
@@ -158,23 +162,31 @@
     }
 
     // ---- lifecycle ----
+    // start() begins the render loop immediately (so the shared background shows
+    // during the countdown). Gameplay stays FROZEN until begin() is called.
     start() {
       if (this.running) return;
       this.running = true;
       this.paused = false;
       this.bindInput();
       this._last = performance.now();
-      this.startedAt = Date.now();
       const loop = (now) => {
         if (!this.running) return;
         let dt = (now - this._last) / 1000;
         this._last = now;
         if (dt > 0.05) dt = 0.05; // clamp after tab switch
-        if (!this.paused) this._step(dt);
+        if (this.bg) this.bg.update(dt);            // background always animates
+        if (!this.paused && !this.frozen) this._step(dt);
         this._render();
         this._raf = requestAnimationFrame(loop);
       };
       this._raf = requestAnimationFrame(loop);
+    }
+
+    begin() {
+      this.frozen = false;
+      this.startedAt = Date.now();
+      this._last = performance.now();
     }
 
     setPaused(p) { this.paused = p; if (!p) this._last = performance.now(); }
@@ -328,8 +340,9 @@
     // ---- rendering ----
     _render() {
       const ctx = this.ctx, W = this.W, H = this.H;
-      this._drawBackground(ctx, W, H);
-      this._drawRoad(ctx, W, H);
+      // ONE shared underwater-tunnel background (identical to the menu)
+      if (this.bg) this.bg.draw(ctx);
+      this._drawSpeedLines(ctx); // scrolling lane cross-lines for forward-motion feel
 
       // entities sorted far -> near for painter's algorithm
       const visible = this.entities
@@ -353,126 +366,24 @@
 
       this._drawPlayer(ctx);
       this._drawParticles(ctx);
-      this._drawOverlay(ctx, W, H);
     }
 
-    _drawBackground(ctx, W, H) {
-      // deep neon ocean water
-      const sky = ctx.createLinearGradient(0, 0, 0, this.horizonY + 40);
-      sky.addColorStop(0, '#03021a');
-      sky.addColorStop(0.5, '#0a0a44');
-      sky.addColorStop(1, '#13105e');
-      ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, W, this.horizonY + 40);
-
-      // bioluminescent glow orb (neon "sun")
-      const ox = W * 0.74, oy = this.horizonY * 0.5, orad = Math.min(W, H) * 0.13;
-      const og = ctx.createRadialGradient(ox, oy, 0, ox, oy, orad);
-      og.addColorStop(0, 'rgba(120,255,240,0.9)');
-      og.addColorStop(0.4, 'rgba(60,200,255,0.45)');
-      og.addColorStop(1, 'transparent');
-      ctx.fillStyle = og;
-      ctx.beginPath(); ctx.arc(ox, oy, orad, 0, 7); ctx.fill();
-
-      // god rays
+    // Scrolling neon cross-lines on the (static) shared road for a forward-motion
+    // feel during gameplay. The road/tunnel/strips themselves live in this.bg.
+    _drawSpeedLines(ctx) {
+      if (this.frozen) return; // road is calm in the menu / during the countdown
       ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      for (let i = 0; i < 4; i++) {
-        const rx = (i / 4) * W + Math.sin(this.time * 0.2 + i) * 24 + W * 0.1;
-        const grd = ctx.createLinearGradient(rx, 0, rx + 70, this.horizonY);
-        grd.addColorStop(0, 'rgba(80,230,255,0.10)');
-        grd.addColorStop(1, 'transparent');
-        ctx.fillStyle = grd;
-        ctx.beginPath();
-        ctx.moveTo(rx, 0); ctx.lineTo(rx + 60, 0); ctx.lineTo(rx + 170, this.horizonY); ctx.lineTo(rx - 90, this.horizonY);
-        ctx.closePath(); ctx.fill();
-      }
-      ctx.restore();
-
-      // parallax neon reef silhouette on the horizon
-      const off = (this.traveled * 8) % (W * 0.5);
-      ctx.save();
-      ctx.shadowColor = '#ff4fd8'; ctx.shadowBlur = 16;
-      ctx.fillStyle = 'rgba(60,20,90,0.85)';
-      for (let i = -1; i < 5; i++) {
-        const bx = i * (W * 0.5) - off;
-        ctx.beginPath();
-        ctx.moveTo(bx, this.horizonY);
-        ctx.lineTo(bx + W * 0.08, this.horizonY - H * 0.1);
-        ctx.lineTo(bx + W * 0.16, this.horizonY - H * 0.04);
-        ctx.lineTo(bx + W * 0.26, this.horizonY - H * 0.16);
-        ctx.lineTo(bx + W * 0.36, this.horizonY - H * 0.05);
-        ctx.lineTo(bx + W * 0.5, this.horizonY);
-        ctx.closePath(); ctx.fill();
-      }
-      ctx.restore();
-
-      // seabed water below horizon
-      const g = ctx.createLinearGradient(0, this.horizonY, 0, H);
-      g.addColorStop(0, '#0a0838');
-      g.addColorStop(1, '#1a0b4a');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, this.horizonY, W, H - this.horizonY);
-
-      // ambient rising bubbles (deterministic from time)
-      ctx.save();
-      ctx.strokeStyle = 'rgba(120,240,255,0.45)';
-      ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 6; ctx.lineWidth = 1.3;
-      for (let i = 0; i < 16; i++) {
-        const seed = i * 53.13;
-        const bx = (Math.sin(seed) * 0.5 + 0.5) * W + Math.sin(this.time + i) * 8;
-        const by = H - ((this.time * (18 + (i % 5) * 8) + seed * 30) % (H * 0.9));
-        const br = 2 + (i % 4);
-        ctx.beginPath(); ctx.arc(bx, by, br, 0, 7); ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    _drawRoad(ctx, W, H) {
-      const nearL = this._project(PLAYER_Z, -1.55, 0);
-      const nearR = this._project(PLAYER_Z, 1.55, 0);
-      const farL = this._project(VIEW, -1.55, 0);
-      const farR = this._project(VIEW, 1.55, 0);
-      // dark glassy seabed lane
-      const road = ctx.createLinearGradient(0, this.horizonY, 0, H);
-      road.addColorStop(0, '#0b0730');
-      road.addColorStop(1, '#241158');
-      ctx.fillStyle = road;
-      ctx.beginPath();
-      ctx.moveTo(farL.x, farL.y); ctx.lineTo(farR.x, farR.y);
-      ctx.lineTo(nearR.x, nearR.y); ctx.lineTo(nearL.x, nearL.y);
-      ctx.closePath(); ctx.fill();
-
-      ctx.save();
-      // scrolling neon cross-lines (synthwave grid) within the lane
-      ctx.strokeStyle = 'rgba(22,242,214,0.5)';
+      ctx.strokeStyle = 'rgba(22,242,214,0.45)';
       ctx.shadowColor = '#16f2d6'; ctx.shadowBlur = 8; ctx.lineWidth = 1.5;
       const dashStart = this.traveled % 3;
       for (let z = VIEW - dashStart; z > PLAYER_Z; z -= 3) {
         const a = this._project(z, -1.55, 0);
         const b = this._project(z, 1.55, 0);
-        ctx.globalAlpha = Math.min(1, a.scale * 1.6);
+        ctx.globalAlpha = Math.min(0.8, a.scale * 1.4);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
-      ctx.globalAlpha = 1;
-
-      // glowing lane dividers (cyan)
-      ctx.strokeStyle = 'rgba(80,255,240,0.85)';
-      ctx.shadowColor = '#16f2d6'; ctx.shadowBlur = 12; ctx.lineWidth = 2;
-      for (const ln of [-0.5, 0.5]) {
-        const a = this._project(PLAYER_Z, ln, 0);
-        const c = this._project(VIEW, ln, 0);
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(c.x, c.y); ctx.stroke();
-      }
-      // glowing edge rails (magenta)
-      ctx.strokeStyle = 'rgba(255,79,216,0.95)';
-      ctx.shadowColor = '#ff4fd8'; ctx.shadowBlur = 16; ctx.lineWidth = 3;
-      for (const ln of [-1.55, 1.55]) {
-        const a = this._project(PLAYER_Z, ln, 0);
-        const c = this._project(VIEW, ln, 0);
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(c.x, c.y); ctx.stroke();
-      }
       ctx.restore();
+      ctx.globalAlpha = 1;
     }
 
     // pick a deterministic sea-creature variant per obstacle
@@ -640,14 +551,6 @@
       }
       ctx.restore();
       ctx.globalAlpha = 1;
-    }
-
-    _drawOverlay(ctx, W, H) {
-      // neon vignette to frame the scene
-      const vg = ctx.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.32, W / 2, H * 0.55, Math.max(W, H) * 0.72);
-      vg.addColorStop(0, 'transparent');
-      vg.addColorStop(1, 'rgba(2,0,14,0.55)');
-      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     }
 
     _roundRect(ctx, x, y, w, h, r, fill, stroke) {
