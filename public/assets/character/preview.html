@@ -27,10 +27,11 @@
 </head>
 <body>
   <h1>Blobbie Dash — Character Assets</h1>
-  <p>These are the pieces from <code>manifest.json</code>. Replace any file in
-     <code>png/</code> (or <code>svg/</code>) with your own export of the same name &amp; size.
-     To change which piece is used for which game state, edit <code>ROLES</code> in
-     <code>public/js/character.js</code>.</p>
+  <p>These are the pieces from <code>manifest.json</code> (SVG only). Replace any file in
+     <code>svg/</code> with your own SVG export of the same name. To change which piece is
+     used for which game state, edit <code>ROLES</code> in <code>public/js/character.js</code>.
+     For a real run animation, add frame files (e.g. <code>run_01.svg</code>, <code>run_02.svg</code>)
+     and set <code>run</code> to an array of their names.</p>
 
   <div class="legend">
     <strong>Current role → asset mapping</strong>
@@ -68,7 +69,7 @@
           const cell = document.createElement('div');
           cell.className = 'cell';
           cell.innerHTML =
-            '<div class="imgbox"><img src="' + it.png + '" onerror="this.src=\'' + it.svg + '\'" alt="' + it.name + '"></div>' +
+            '<div class="imgbox"><img src="' + it.svg + '" alt="' + it.name + '"></div>' +
             '<div class="name">' + it.name + '</div>' +
             '<div class="size">' + it.export_size.join(' × ') + '</div>' +
             (roles ? '<div class="role">' + roles.join(' · ') + '</div>' : '');

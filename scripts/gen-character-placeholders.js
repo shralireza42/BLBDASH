@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 /*
- * Generates placeholder art for every entry in
+ * Generates placeholder SVG art for every entry in
  * public/assets/character/manifest.json, at the exact `export_size` of each
  * piece. These are stand-ins so the game runs out of the box — replace the
- * files in public/assets/character/png|svg with your own exports of the same
+ * files in public/assets/character/svg with your own SVG exports of the same
  * name + size and everything keeps working.
  *
- * Usage:  node scripts/gen-character-placeholders.js
- * SVGs are always written. PNGs are written too if `sharp` is installed
- * (npm i -D sharp); otherwise the game falls back to the SVGs automatically.
+ * This project is SVG-only (vector art scales crisply at any size and supports
+ * full alpha). Usage:  node scripts/gen-character-placeholders.js
  */
 'use strict';
 const fs = require('fs');
@@ -81,23 +80,12 @@ function buildSvg(item) {
 </svg>`;
 }
 
-let sharp = null;
-try { sharp = require('sharp'); } catch (e) { /* optional */ }
-
-(async () => {
-  let svgN = 0, pngN = 0;
-  for (const item of manifest) {
-    const svg = buildSvg(item);
-    const svgPath = path.join(ROOT, item.svg);
-    fs.mkdirSync(path.dirname(svgPath), { recursive: true });
-    fs.writeFileSync(svgPath, svg);
-    svgN++;
-    if (sharp) {
-      const pngPath = path.join(ROOT, item.png);
-      fs.mkdirSync(path.dirname(pngPath), { recursive: true });
-      await sharp(Buffer.from(svg)).png().toFile(pngPath);
-      pngN++;
-    }
-  }
-  console.log(`Wrote ${svgN} SVG placeholders` + (sharp ? ` and ${pngN} PNGs.` : ' (sharp not installed — PNGs skipped, SVGs will be used).'));
-})();
+let svgN = 0;
+for (const item of manifest) {
+  const svg = buildSvg(item);
+  const svgPath = path.join(ROOT, item.svg);
+  fs.mkdirSync(path.dirname(svgPath), { recursive: true });
+  fs.writeFileSync(svgPath, svg);
+  svgN++;
+}
+console.log(`Wrote ${svgN} SVG placeholders.`);
