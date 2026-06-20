@@ -63,6 +63,9 @@
       this.startedAt = 0;
       this.magnet = 0;
       this.animator = (window.Character && window.Character.Animator) ? new window.Character.Animator() : null;
+      this.opponents = {};      // id -> smoothed ghost state
+      this._oppTargets = {};    // id -> latest networked state
+      this._oppColors = {};     // id -> ghost tint
     }
 
     _fitCanvas() {
@@ -141,15 +144,17 @@
 
     setOpponent(o) {
       if (!o) return;
-      this._oppTarget = o;
-      if (!this.opponent) { this.opponent = Object.assign({}, o); return; }
+      const id = o.id == null ? '_' : o.id;
+      this._oppTargets[id] = o;
+      if (!this._oppColors[id]) {
+        const palette = ['#39ff9e', '#ffb84f', '#ff6fae', '#7da8ff'];
+        this._oppColors[id] = palette[Object.keys(this._oppColors).length % palette.length];
+      }
+      const cur = this.opponents[id];
+      if (!cur) { this.opponents[id] = Object.assign({ color: this._oppColors[id] }, o); return; }
       // discrete fields update immediately; lane/air/distance are smoothed in _step
-      this.opponent.name = o.name;
-      this.opponent.alive = o.alive;
-      this.opponent.score = o.score;
-      this.opponent.coins = o.coins;
-      this.opponent.frame = o.frame;
-      this.opponent.sliding = o.sliding;
+      cur.name = o.name; cur.alive = o.alive; cur.score = o.score;
+      cur.coins = o.coins; cur.frame = o.frame; cur.sliding = o.sliding;
     }
 
     // ---- lifecycle ----
@@ -230,9 +235,11 @@
       for (const p of this.particles) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 240 * dt; }
       this.particles = this.particles.filter((p) => p.life > 0);
 
-      // smooth the opponent ghost toward its latest networked state
-      if (this._oppTarget && this.opponent) {
-        const tg = this._oppTarget, o = this.opponent, k = Math.min(1, dt * 10);
+      // smooth every opponent ghost toward its latest networked state
+      const k = Math.min(1, dt * 10);
+      for (const id in this._oppTargets) {
+        const tg = this._oppTargets[id], o = this.opponents[id];
+        if (!o) continue;
         const tl = tg.lane == null ? 1 : tg.lane, ol = o.lane == null ? 1 : o.lane;
         o.lane = ol + (tl - ol) * k;
         o.air = (o.air || 0) + (((tg.air || 0) - (o.air || 0)) * k);
@@ -335,8 +342,14 @@
         else this._drawObstacle(ctx, e, z);
       }
 
-      // opponent ghost (a marker on the far track showing relative progress)
-      if (this.showGhost && this.opponent) this._drawGhost(ctx);
+      // live rivals on the same track (dead ones are removed)
+      if (this.showGhost) {
+        const ghosts = Object.keys(this.opponents)
+          .map((id) => this.opponents[id])
+          .filter((o) => o && o.alive !== false && o.distance != null)
+          .sort((a, b) => (b.distance || 0) - (a.distance || 0));
+        for (const o of ghosts) this._drawGhost(ctx, o);
+      }
 
       this._drawPlayer(ctx);
       this._drawParticles(ctx);
@@ -574,6 +587,7 @@
     }
 
     _drawPlayer(ctx) {
+      if (!this.alive) return; // loser character is removed (only the burst plays)
       // laneWorld goes -1 (left) .. 1 (right); this.lane is 0..2.
       const p = this._project(PLAYER_Z, this.lane - 1, this.air);
       const size = this.H * 0.18;
@@ -585,37 +599,33 @@
       window.Blobbie.draw(ctx, p.x, p.y, size, { frame, state, time: this.time, alpha: this.alive ? 1 : 0.4 });
     }
 
-    _drawGhost(ctx) {
+    _drawGhost(ctx, o) {
       // Live rival on the SAME track: positioned by their relative distance, in
       // their actual lane, with their real jump height & animation frame.
-      const o = this.opponent;
       if (!o || o.distance == null) return;
-      const dead = o.alive === false;
       const rel = o.distance - this.traveled;     // +ve = rival is ahead of me
       const zg = Math.max(PLAYER_Z + 0.4, Math.min(VIEW - 3, PLAYER_Z + rel));
       const laneWorld = (o.lane == null ? 1 : o.lane) - 1;
-      const air = dead ? 0 : (o.air || 0);
-      const p = this._project(zg, laneWorld, air);
+      const p = this._project(zg, laneWorld, o.air || 0);
       const playerScale = FOCAL / (FOCAL + PLAYER_Z);
       const size = this.H * 0.18 * (p.scale / playerScale);
       const frame = o.frame || (window.Character && window.Character.frameAtTime
         ? window.Character.frameAtTime('run', this.time) : null);
+      const color = o.color || '#39ff9e';
 
       window.Blobbie.draw(ctx, p.x, p.y, size, {
-        frame, state: dead ? 'slide' : 'run', time: this.time,
-        alpha: dead ? 0.35 : 0.72, tint: '#39ff9e',
+        frame, state: 'run', time: this.time, alpha: 0.72, tint: color,
       });
 
       const gap = Math.round(rel);
       let label = o.name || 'Rival';
-      if (dead) label += ' • OUT';
-      else if (gap > 1) label += ' • ' + gap + 'm ahead';
+      if (gap > 1) label += ' • ' + gap + 'm ahead';
       else if (gap < -1) label += ' • ' + (-gap) + 'm behind';
       ctx.save();
-      ctx.fillStyle = 'rgba(57,255,158,0.95)';
+      ctx.fillStyle = color;
       ctx.font = 'bold ' + Math.max(10, 13 * p.scale) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center';
-      ctx.shadowColor = '#39ff9e'; ctx.shadowBlur = 8;
+      ctx.shadowColor = color; ctx.shadowBlur = 8;
       ctx.fillText(label, p.x, p.y - size - 6);
       ctx.restore();
     }
