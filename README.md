@@ -7,12 +7,20 @@ challenge a friend with a room code, and climb the weekly tournament leaderboard
 
 Built to be **dropped into any website** as a single embeddable iframe.
 
-![Blobbie Dash gameplay](docs/screenshot.png)
+![Blobbie Dash gameplay](docs/neon-game.png)
+![Blobbie Dash menu](docs/neon-menu.png)
 
 ---
 
 ## Features
 
+- 🌊 **Neon underwater theme** — a synthwave seabed with glowing grid lanes, magenta rails,
+  bioluminescent lighting, parallax reef, god rays and rising bubbles. Obstacles are **sea
+  creatures**: jump over pufferfish & clams, slide under jellyfish & kelp arches, and dodge
+  neon coral/rock walls by switching lanes.
+- 🔊 **Sound & music** — a fully synthesized (Web Audio) sound engine: jump/slide/coin/crash
+  SFX, win/lose stings, countdown beeps, and a looping synthwave track. Mute toggle in the
+  top bar. No audio files to ship.
 - 🎮 **Endless runner** — pseudo-3D 3-lane track, jump / slide / lane-switch, ramping
   difficulty, coins, hurdles, overhead bars and walls. Keyboard + touch + on-screen controls.
 - ⚡ **Ranked PvP (random)** — real-time matchmaking. Both players race the **exact same
@@ -126,7 +134,9 @@ public/
     shared.js     Deterministic PRNG + course generator (shared by both PvP clients & server)
     character.js  Frame animation system: 5 animations + Animator (run/jump/slide/left/right)
     blobbie.js    Character renderer: animation frame -> blobbie1.png sprite -> procedural fallback
-    game.js       Pseudo-3D endless-runner engine (canvas) — drives the Animator on input
+    game.js       Pseudo-3D neon-sea runner engine (canvas) — drives the Animator on input
+    audio.js      Synthesized Web Audio sound engine (SFX + looping music + mute)
+    background.js Animated neon-underwater background for the menu screens
     net.js        REST + Socket.IO client wrapper
     main.js       UI orchestration (screens, menus, matchmaking, results)
   assets/
