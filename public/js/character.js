@@ -20,8 +20,16 @@
   'use strict';
 
   // Map a game ROLE -> an asset `name` from the manifest. Edit freely.
+  //
+  // A role can be EITHER a single name (string) OR an array of names for a
+  // frame-by-frame animation cycle. e.g. to make a real running animation,
+  // export run_01.svg, run_02.svg, ... and set:
+  //   run: ['run_01', 'run_02', 'run_03', 'run_04'],
+  // The frames are cycled automatically (see RUN_FPS) while the player runs.
+  // (Even with a SINGLE run pose, the engine adds a procedural bounce/lean so
+  //  the character visibly "runs" — see blobbie.js.)
   const ROLES = {
-    run:    'middle_pose_01',   // default running pose
+    run:    'middle_pose_01',   // running pose (string, or an array of frames)
     jump:   'middle_pose_02',   // airborne pose
     slide:  'middle_pose_06',   // ducking / sliding pose (shortest piece)
     idle:   'top_full_body_01', // standing full body (menu / countdown)
@@ -29,6 +37,8 @@
     win:    'top_full_body_02', // victory / run-complete art
     lose:   'top_full_body_03', // defeat art
   };
+
+  const RUN_FPS = 10; // frames/sec when a role is an array of frames
 
   const MANIFEST_URL = 'assets/character/manifest.json';
   const BASE = 'assets/character/';
@@ -48,9 +58,10 @@
   }
 
   async function loadOne(meta) {
-    // try PNG first, then SVG
-    let img = await loadImage(BASE + meta.png);
-    if (!img) img = await loadImage(BASE + meta.svg);
+    // SVG-first (this project ships SVG-only art). Fall back to PNG only if a
+    // project chooses to provide PNGs instead.
+    let img = meta.svg ? await loadImage(BASE + meta.svg) : null;
+    if (!img && meta.png) img = await loadImage(BASE + meta.png);
     byName[meta.name] = { meta, img, ok: !!img };
   }
 
@@ -72,18 +83,34 @@
     return loadPromise;
   }
 
-  function resolveName(roleOrName) {
-    return ROLES[roleOrName] || roleOrName;
+  // Resolve a role/name (+ optional time for animated frame arrays) to a single
+  // concrete asset name.
+  function resolveName(roleOrName, time) {
+    const val = ROLES[roleOrName] != null ? ROLES[roleOrName] : roleOrName;
+    if (Array.isArray(val)) {
+      if (!val.length) return null;
+      const i = Math.floor((time || 0) * RUN_FPS) % val.length;
+      return val[i];
+    }
+    return val;
   }
 
-  function get(roleOrName) {
-    const name = resolveName(roleOrName);
+  function entryFor(name) {
     const entry = byName[name];
     if (entry && entry.ok && entry.img && entry.img.complete && entry.img.naturalWidth > 0) return entry;
     return null;
   }
 
-  function has(roleOrName) { return !!get(roleOrName); }
+  function get(roleOrName, time) {
+    return entryFor(resolveName(roleOrName, time));
+  }
+
+  // A role "exists" if its (first) frame is loaded.
+  function has(roleOrName) {
+    const val = ROLES[roleOrName] != null ? ROLES[roleOrName] : roleOrName;
+    const first = Array.isArray(val) ? val[0] : val;
+    return !!entryFor(first);
+  }
 
   /**
    * Draw a character piece anchored at the FEET (footX, footY), scaled so its
@@ -93,7 +120,7 @@
    */
   function draw(ctx, roleOrName, footX, footY, targetH, opts) {
     opts = opts || {};
-    const entry = get(roleOrName);
+    const entry = get(roleOrName, opts.time) || get(roleOrName);
     if (!entry) return false;
     const [ew, eh] = entry.meta.export_size;
     const w = targetH * (ew / eh);

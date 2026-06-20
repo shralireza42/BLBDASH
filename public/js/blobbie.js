@@ -74,9 +74,29 @@
 
     // 1) preferred: user's manifest character pieces
     if (window.Character && window.Character.has(role)) {
-      const bob = opts.state === 'run' ? Math.abs(Math.cos(t * 14)) * size * 0.04 : 0;
-      const drewH = opts.state === 'jump' ? size * 1.04 : size;
-      if (window.Character.draw(ctx, role, x, y, drewH, { alpha, tint: opts.tint, bob })) return;
+      const drewH = opts.state === 'jump' ? size * 1.05 : size;
+      if (opts.state === 'run') {
+        // Procedural run cycle so a single static pose still reads as "running":
+        // a vertical hop with squash/stretch and a subtle forward lean wobble.
+        // (If ROLES.run is an array of frames, those are also cycled by time.)
+        const phase = t * 11;
+        const bounce = Math.abs(Math.sin(phase));      // 0..1
+        const bob = bounce * size * 0.08;              // hop height
+        const stretch = bounce - 0.5;                  // -0.5..0.5
+        const sx = 1 - stretch * 0.10;                 // wide on foot-plant
+        const sy = 1 + stretch * 0.10;                 // tall at the top of the hop
+        const lean = 0.06 + Math.sin(phase * 2) * 0.02;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(lean);
+        ctx.scale(sx, sy);
+        ctx.translate(-x, -y);
+        const ok = window.Character.draw(ctx, role, x, y - bob, drewH, { alpha, tint: opts.tint, time: t });
+        ctx.restore();
+        if (ok) return;
+      } else if (window.Character.draw(ctx, role, x, y, drewH, { alpha, tint: opts.tint, time: t })) {
+        return;
+      }
     }
 
     // 2) fallback: classic sprite / procedural blob (with squash & stretch)
