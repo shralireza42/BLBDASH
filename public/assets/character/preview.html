@@ -34,26 +34,34 @@
      and set <code>run</code> to an array of their names.</p>
 
   <div class="legend">
-    <strong>Current role → asset mapping</strong>
-    <table id="legend"></table>
+    <strong>Animations (input → frames, ping-pong one-shot except run)</strong>
+    <table id="animLegend"></table>
+    <strong style="display:block;margin-top:12px">Static roles (menu / result art)</strong>
+    <table id="roleLegend"></table>
   </div>
 
   <div id="groups"></div>
 
   <script>
-    // Keep in sync with ROLES in public/js/character.js
+    // Keep in sync with ANIM/ROLES in public/js/character.js
+    const ANIM = {
+      'run (default, loops)': 'run_back_frame_01..08',
+      'jump (UP key)': 'jump_back_frame_01..06',
+      'slide (DOWN key)': 'jump_slide_sit_mix_back_frame_01..06',
+      'move left (LEFT key)': 'move_left_back_frame_01..06',
+      'move right (RIGHT key)': 'move_right_back_frame_01..06',
+    };
     const ROLES = {
-      run: 'middle_pose_01', jump: 'middle_pose_02', slide: 'middle_pose_06',
-      idle: 'top_full_body_01', avatar: 'top_full_body_01',
-      win: 'top_full_body_02', lose: 'top_full_body_03',
+      idle: 'run_back_frame_01', avatar: 'run_back_frame_01',
+      win: 'jump_back_frame_06', lose: 'jump_slide_sit_mix_back_frame_06',
     };
     const roleByAsset = {};
     Object.keys(ROLES).forEach((r) => { (roleByAsset[ROLES[r]] = roleByAsset[ROLES[r]] || []).push(r); });
 
-    const legend = document.getElementById('legend');
-    Object.keys(ROLES).forEach((r) => {
-      legend.insertAdjacentHTML('beforeend', '<tr><td>' + r + '</td><td>' + ROLES[r] + '</td></tr>');
-    });
+    const al = document.getElementById('animLegend');
+    Object.keys(ANIM).forEach((r) => { al.insertAdjacentHTML('beforeend', '<tr><td>' + r + '</td><td>' + ANIM[r] + '</td></tr>'); });
+    const rl = document.getElementById('roleLegend');
+    Object.keys(ROLES).forEach((r) => { rl.insertAdjacentHTML('beforeend', '<tr><td>' + r + '</td><td>' + ROLES[r] + '</td></tr>'); });
 
     fetch('manifest.json').then((r) => r.json()).then((items) => {
       const groups = {};

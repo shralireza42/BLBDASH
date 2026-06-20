@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="340" viewBox="0 0 220 340">
+  <rect x="1.5" y="1.5" width="217" height="337" rx="13.2"
+        fill="#ef7a8b" fill-opacity="0.08" stroke="#ef7a8b" stroke-opacity="0.5"
+        stroke-width="2" stroke-dasharray="6 5"/>
+  <g transform="rotate(0.00 110 256.7854293038801)">
+    <!-- legs -->
+    <rect x="60.5" y="256.7854293038801" width="28.6" height="54.4" rx="14.3" fill="#ef7a8b" stroke="#1d1d28" stroke-width="3"/>
+    <rect x="130.89999999999998" y="241.22908011777605" width="28.6" height="54.4" rx="14.3" fill="#ef7a8b" stroke="#1d1d28" stroke-width="3"/>
+    <!-- body (back view: no face) -->
+    <rect x="55" y="45.98542930388008" width="110" height="210.8" rx="49.5" fill="#ef7a8b" stroke="#1d1d28" stroke-width="3"/>
+    <ellipse cx="110" cy="83.92942930388008" rx="33" ry="25.296" fill="#ffffff" fill-opacity="0.18"/>
+  </g>
+  <text x="110" y="170" font-family="system-ui, sans-serif" font-weight="900"
+        font-size="74.80000000000001" fill="#1d1d28" fill-opacity="0.22" text-anchor="middle" dominant-baseline="middle">6</text>
+  <text x="110" y="332" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="13" fill="#ef7a8b" text-anchor="middle">run 06</text>
+</svg>

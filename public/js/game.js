@@ -62,6 +62,7 @@
       this.particles = [];
       this.startedAt = 0;
       this.magnet = 0;
+      this.animator = (window.Character && window.Character.Animator) ? new window.Character.Animator() : null;
     }
 
     _fitCanvas() {
@@ -125,6 +126,8 @@
 
     action(a) {
       if (!this.alive || this.paused || !this.running) return;
+      // Trigger the matching one-shot animation for the key that was pressed.
+      if (this.animator) this.animator.play(a === 'jump' ? 'jump' : a === 'slide' ? 'slide' : a);
       if (a === 'left') { this.targetLane = Math.max(0, this.targetLane - 1); }
       else if (a === 'right') { this.targetLane = Math.min(2, this.targetLane + 1); }
       else if (a === 'jump') {
@@ -187,6 +190,7 @@
     _step(dt) {
       if (!this.alive) return;
       this.time += dt;
+      if (this.animator) this.animator.update(dt);
       const speed = S.speedAt(this.traveled);
       this.traveled += speed * dt;
 
@@ -443,7 +447,9 @@
       let state = 'run';
       if (this.air > 0.02) state = 'jump';
       else if (this.sliding) state = 'slide';
-      window.Blobbie.draw(ctx, p.x, p.y, size, { state, time: this.time, alpha: this.alive ? 1 : 0.4 });
+      // Exact animation frame from the controller (falls back to state-based art).
+      const frame = this.animator ? this.animator.currentFrame() : null;
+      window.Blobbie.draw(ctx, p.x, p.y, size, { frame, state, time: this.time, alpha: this.alive ? 1 : 0.4 });
     }
 
     _drawGhost(ctx) {
@@ -455,8 +461,10 @@
       const z = Math.max(PLAYER_Z + 1.5, Math.min(VIEW - 6, PLAYER_Z + 6 - rel * 0.04));
       const p = this._project(z, S.LANE_OFFSETS[0] + 1, 0); // centre lane far
       const size = this.H * 0.16 * p.scale * 2.2;
+      const ghostFrame = (window.Character && window.Character.frameAtTime)
+        ? window.Character.frameAtTime('run', this.time) : null;
       window.Blobbie.draw(ctx, p.x, p.y, size, {
-        state: o.alive === false ? 'slide' : 'run', time: this.time,
+        frame: ghostFrame, state: o.alive === false ? 'slide' : 'run', time: this.time,
         alpha: 0.55, tint: '#39d98a',
       });
       ctx.fillStyle = 'rgba(57,217,138,0.95)';

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="340" viewBox="0 0 240 340">
+  <rect x="1.5" y="1.5" width="237" height="337" rx="14.399999999999999"
+        fill="#39d98a" fill-opacity="0.08" stroke="#39d98a" stroke-opacity="0.5"
+        stroke-width="2" stroke-dasharray="6 5"/>
+  <g transform="rotate(-3.42 120 275.50570230503484)">
+    <!-- legs -->
+    <rect x="66" y="254.72109261420832" width="31.200000000000003" height="54.4" rx="15.600000000000001" fill="#39d98a" stroke="#1d1d28" stroke-width="3"/>
+    <rect x="142.8" y="275.50570230503484" width="31.200000000000003" height="54.4" rx="15.600000000000001" fill="#39d98a" stroke="#1d1d28" stroke-width="3"/>
+    <!-- body (back view: no face) -->
+    <rect x="60" y="64.70570230503482" width="120" height="210.8" rx="54" fill="#39d98a" stroke="#1d1d28" stroke-width="3"/>
+    <ellipse cx="120" cy="102.64970230503482" rx="36" ry="25.296" fill="#ffffff" fill-opacity="0.18"/>
+  </g>
+  <text x="120" y="170" font-family="system-ui, sans-serif" font-weight="900"
+        font-size="81.60000000000001" fill="#1d1d28" fill-opacity="0.22" text-anchor="middle" dominant-baseline="middle">2</text>
+  <text x="120" y="332" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="13" fill="#39d98a" text-anchor="middle">move_left 02</text>
+</svg>

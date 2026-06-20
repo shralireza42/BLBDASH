@@ -75,61 +75,43 @@ Walls can only be dodged by switching lanes. Score = distance + coins × value.
 
 ---
 
-## Character assets (bring your own art) 🎨
+## Character animations (bring your own art) 🎨
 
-The in-game runner, the win/lose result art and the menu avatar are all driven by
-a **manifest of character pieces** so you can swap in your own art without touching
-game code.
+The in-game runner is **frame-animated** from SVG sequences, so you can drop in your own
+art without touching game code. There are **5 animations** (all SVG, in
+[`public/assets/character/svg/`](public/assets/character/svg/), listed in
+[`manifest.json`](public/assets/character/manifest.json)):
 
-- Pieces live in [`public/assets/character/`](public/assets/character/), described by
-  [`manifest.json`](public/assets/character/manifest.json) (groups: `top_full_body`,
-  `middle_head`, `middle_pose`, `bottom_asset`). **Art is SVG** (vector scales crisply
-  at any size and supports full transparency).
-- Every piece ships with a **labeled placeholder SVG** at its exact export size, so the
-  game runs out of the box. Open **`/assets/character/preview.html`** in a browser to see
-  every piece, its name/size, and which game state it maps to.
+| Animation | Trigger | Frames | Playback |
+| --- | --- | --- | --- |
+| **run** | default (no key) | `run_back_frame_01..08` | loops forever |
+| **jump** | UP key | `jump_back_frame_01..06` | one-shot ping-pong |
+| **slide** | DOWN key | `jump_slide_sit_mix_back_frame_01..06` | one-shot ping-pong |
+| **move left** | LEFT key | `move_left_back_frame_01..06` | one-shot ping-pong |
+| **move right** | RIGHT key | `move_right_back_frame_01..06` | one-shot ping-pong |
 
-**To use your own character:**
+**Ping-pong one-shot** = on a key press the animation plays frame `1 → last`, then smoothly
+back `last → 1`, and then control returns to the looping **run** animation. (Implemented by
+`Character.Animator` in [`public/js/character.js`](public/js/character.js).)
 
-1. Export your pieces as **SVG** and drop them into `public/assets/character/svg/` using the
-   **same file names** as in the manifest. If a piece is ever missing, the classic
-   `blobbie1.png` mascot is the final fallback — so nothing breaks while you're mid-swap.
-2. Choose which piece represents which game state by editing **`ROLES`** at the top of
-   [`public/js/character.js`](public/js/character.js):
+The result/menu art reuses frames via static **roles**: `avatar`/`idle` → `run_back_frame_01`,
+`win` → `jump_back_frame_06`, `lose` → `jump_slide_sit_mix_back_frame_06`.
 
-   | Role | Used for | Default |
-   | --- | --- | --- |
-   | `run` / `jump` / `slide` | the player while running | `middle_pose_01/02/06` |
-   | `win` | victory / run-complete art | `top_full_body_02` |
-   | `lose` | defeat art | `top_full_body_03` |
-   | `idle` / `avatar` | menu avatar & countdown | `top_full_body_01` |
+**To use your own art:**
 
-   All other pieces (extra heads, poses, `bottom_asset` props) are still loaded and
-   available — point a role at them, or draw them directly with
-   `Character.draw(ctx, 'middle_head_03', x, y, height)`.
+1. Replace each SVG in `public/assets/character/svg/` with your own SVG of the **same file
+   name**. The game loads strictly by these names. Aspect ratio is read from each SVG, so
+   your art is never distorted. (If a frame is missing, the `blobbie1.png` mascot is the
+   final fallback — nothing breaks while you swap.)
+2. To change frame counts, timing (`fps`), or the loop/ping-pong behaviour, edit `ANIM` at
+   the top of `public/js/character.js`. Then regenerate placeholders if you changed the
+   counts:
 
-### Running animation
+   ```bash
+   node scripts/gen-character-placeholders.js
+   ```
 
-The engine adds a **procedural run cycle** (vertical hop + squash/stretch + forward lean)
-to the `run` pose, so even a *single* run SVG visibly "runs" — **no GIF needed** (and GIFs
-don't work on canvas anyway: only their first frame is drawn).
-
-Want a true hand-drawn run cycle? Export a few frames and make `run` an **array** — the
-engine cycles them automatically:
-
-```js
-// public/js/character.js
-const ROLES = {
-  run: ['run_01', 'run_02', 'run_03', 'run_04'], // add run_0x.svg to assets/character/svg/
-  // ...
-};
-```
-
-To regenerate the placeholder SVGs after editing the manifest:
-
-```bash
-node scripts/gen-character-placeholders.js
-```
+Open **`/assets/character/preview.html`** to see every frame and the input → animation map.
 
 ## Project structure
 
@@ -142,20 +124,20 @@ public/
   css/styles.css
   js/
     shared.js     Deterministic PRNG + course generator (shared by both PvP clients & server)
-    character.js  Manifest-driven character system + role mapping (run/jump/slide/win/lose/avatar)
-    blobbie.js    Character renderer: Character pieces -> blobbie1.png sprite -> procedural fallback
-    game.js       Pseudo-3D endless-runner engine (canvas)
+    character.js  Frame animation system: 5 animations + Animator (run/jump/slide/left/right)
+    blobbie.js    Character renderer: animation frame -> blobbie1.png sprite -> procedural fallback
+    game.js       Pseudo-3D endless-runner engine (canvas) — drives the Animator on input
     net.js        REST + Socket.IO client wrapper
     main.js       UI orchestration (screens, menus, matchmaking, results)
   assets/
     blobbie1.png            Mascot used for branding / fallback
     character/
-      manifest.json         Character pieces (your art goes here)
-      svg/                  Placeholder SVG art at each piece's export size
-      preview.html          Gallery of all pieces + role mapping
+      manifest.json         The 32 animation frames (your SVG art goes here)
+      svg/                  Placeholder SVG frames (replace by file name)
+      preview.html          Gallery of all frames + input → animation map
   embed-example.html
 scripts/
-  gen-character-placeholders.js   Regenerate placeholder SVGs from the manifest
+  gen-character-placeholders.js   Regenerate manifest + placeholder SVGs (the 5 animations)
 ```
 
 ## API overview

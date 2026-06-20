@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="264" height="300" viewBox="0 0 264 300">
+  <rect x="1.5" y="1.5" width="261" height="297" rx="15.84"
+        fill="#3ad0ff" fill-opacity="0.08" stroke="#3ad0ff" stroke-opacity="0.5"
+        stroke-width="2" stroke-dasharray="6 5"/>
+  <g transform="rotate(0.00 132 207.0932667397366)">
+    <!-- legs -->
+    <rect x="72.6" y="184.23019607982744" width="34.32" height="48" rx="17.16" fill="#3ad0ff" stroke="#1d1d28" stroke-width="3"/>
+    <rect x="157.08" y="207.0932667397366" width="34.32" height="48" rx="17.16" fill="#3ad0ff" stroke="#1d1d28" stroke-width="3"/>
+    <!-- body (back view: no face) -->
+    <rect x="66" y="57.093266739736606" width="132" height="150" rx="59.4" fill="#3ad0ff" stroke="#1d1d28" stroke-width="3"/>
+    <ellipse cx="132" cy="84.0932667397366" rx="39.6" ry="18" fill="#ffffff" fill-opacity="0.18"/>
+  </g>
+  <text x="132" y="150" font-family="system-ui, sans-serif" font-weight="900"
+        font-size="89.76" fill="#1d1d28" fill-opacity="0.22" text-anchor="middle" dominant-baseline="middle">2</text>
+  <text x="132" y="292" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="13" fill="#3ad0ff" text-anchor="middle">jump_slide 02</text>
+</svg>

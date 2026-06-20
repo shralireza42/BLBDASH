@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="360" viewBox="0 0 220 360">
+  <rect x="1.5" y="1.5" width="217" height="357" rx="13.2"
+        fill="#7b4dff" fill-opacity="0.08" stroke="#7b4dff" stroke-opacity="0.5"
+        stroke-width="2" stroke-dasharray="6 5"/>
+  <g transform="rotate(-2.85 110 291.7119200876839)">
+    <!-- legs -->
+    <rect x="60.5" y="272.65936120442626" width="28.6" height="57.6" rx="14.3" fill="#7b4dff" stroke="#1d1d28" stroke-width="3"/>
+    <rect x="130.89999999999998" y="291.7119200876839" width="28.6" height="57.6" rx="14.3" fill="#7b4dff" stroke="#1d1d28" stroke-width="3"/>
+    <!-- body (back view: no face) -->
+    <rect x="55" y="68.51192008768393" width="110" height="223.2" rx="49.5" fill="#7b4dff" stroke="#1d1d28" stroke-width="3"/>
+    <ellipse cx="110" cy="108.68792008768392" rx="33" ry="26.784" fill="#ffffff" fill-opacity="0.18"/>
+  </g>
+  <text x="110" y="180" font-family="system-ui, sans-serif" font-weight="900"
+        font-size="74.80000000000001" fill="#1d1d28" fill-opacity="0.22" text-anchor="middle" dominant-baseline="middle">2</text>
+  <text x="110" y="352" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="13" fill="#7b4dff" text-anchor="middle">jump_back 02</text>
+</svg>
