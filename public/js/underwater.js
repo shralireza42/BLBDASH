@@ -198,20 +198,24 @@
       ctx.globalAlpha = 1;
       ctx.restore();
 
-      // faint lane dividers (3-lane road, but centre stays clean)
+      // lane dividers — clearer readability (3 lanes), with a soft cyan glow
       ctx.save();
-      ctx.strokeStyle = 'rgba(80,255,240,0.18)';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(120,255,245,0.35)';
+      ctx.shadowColor = '#16f2d6'; ctx.shadowBlur = 6; ctx.lineWidth = 1.8;
       for (const ln of [-0.5, 0.5]) {
         const a = this.project(PLAYER_Z, ln, 0), b = this.project(VIEW, ln, 0);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
       ctx.restore();
 
-      // neon side strips (magenta edge rails) — drawn last so they glow on top
+      // neon side strips (magenta edge rails) — emissive double-stroke (glow + core)
       ctx.save();
-      ctx.strokeStyle = '#ff4fd8';
-      ctx.shadowColor = '#ff4fd8'; ctx.shadowBlur = 14; ctx.lineWidth = 3;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(255,79,216,0.55)';
+      ctx.shadowColor = '#ff4fd8'; ctx.shadowBlur = 22; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(nL.x, nL.y); ctx.lineTo(fL.x, fL.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(nR.x, nR.y); ctx.lineTo(fR.x, fR.y); ctx.stroke();
+      ctx.strokeStyle = '#ffd6f4'; ctx.shadowBlur = 8; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(nL.x, nL.y); ctx.lineTo(fL.x, fL.y); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(nR.x, nR.y); ctx.lineTo(fR.x, fR.y); ctx.stroke();
       ctx.restore();
@@ -227,7 +231,7 @@
       const palette = ['#16f2d6', '#7dfff0', '#ff8fe0', '#7b9cff', '#39ff9e'];
 
       // FAR fish: open water above the horizon — swim full width, very slow
-      const farN = Math.max(5, Math.round(W / 130));
+      const farN = Math.max(7, Math.round(W / 95));
       for (let i = 0; i < farN; i++) {
         this.fish.push({
           kind: 'far', x: Math.random() * W, y: rnd(H * 0.08, this.horizonY * 0.92),
@@ -237,7 +241,7 @@
         });
       }
       // SIDE fish: below horizon, in the water columns beside the road — slightly faster
-      const sideN = 8;
+      const sideN = 10;
       for (let i = 0; i < sideN; i++) {
         const side = i % 2 === 0 ? -1 : 1;
         this.fish.push({
@@ -253,13 +257,20 @@
       for (let i = 0; i < bubN; i++) {
         this.bubbles.push({ x: Math.random() * W, y: Math.random() * H, r: rnd(1.5, 6), sp: rnd(12, 42), seed: Math.random() * 6.28 });
       }
+      // drifting plankton motes (depth / "alive" ambience)
+      this.motes = this.motes || [];
+      this.motes.length = 0;
+      const moteN = Math.max(18, Math.round(W / 26));
+      for (let i = 0; i < moteN; i++) {
+        this.motes.push({ x: Math.random() * W, y: Math.random() * H, r: rnd(0.6, 2.2), vx: rnd(-6, 6), vy: rnd(-4, 4), seed: Math.random() * 6.28 });
+      }
     }
 
     update(dt) {
       if (!this._built) return;
       if (dt > 0.05) dt = 0.05;
       this.time += dt;
-      const W = this.W, margin = 18;
+      const W = this.W, H = this.H, margin = 18;
       for (const f of this.fish) {
         f.x += f.vx * dt;
         f.wy = f.y + Math.sin(this.time * f.bob + f.phase) * f.amp;
@@ -285,17 +296,56 @@
         b.x += Math.sin(this.time * 0.6 + b.seed) * 0.25;
         if (b.y < -8) { b.y = this.H + 8; b.x = Math.random() * W; }
       }
+      if (this.motes) for (const m of this.motes) {
+        m.x += (m.vx + Math.sin(this.time * 0.4 + m.seed) * 3) * dt;
+        m.y += (m.vy + Math.cos(this.time * 0.3 + m.seed) * 3) * dt;
+        if (m.x < -6) m.x = W + 6; else if (m.x > W + 6) m.x = -6;
+        if (m.y < -6) m.y = H + 6; else if (m.y > H + 6) m.y = -6;
+      }
     }
 
     // ---------- DRAW (per frame) ----------
     draw(ctx) {
       if (!this._built) return;
       ctx.drawImage(this.staticCanvas, 0, 0, this.W, this.H);
+      this._drawMotes(ctx);
       this._drawFish(ctx);
+      this._drawGloss(ctx);
       this._drawCaustics(ctx);
       this._drawBubbles(ctx);
       this._drawShimmer(ctx);
       this._drawVignette(ctx);
+    }
+
+    _drawMotes(ctx) {
+      if (!this.motes) return;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const m of this.motes) {
+        const a = 0.18 + 0.12 * (0.5 + 0.5 * Math.sin(this.time * 1.5 + m.seed));
+        ctx.globalAlpha = a;
+        ctx.fillStyle = 'rgba(150,245,255,1)';
+        ctx.beginPath(); ctx.arc(m.x, m.y, m.r, 0, 7); ctx.fill();
+      }
+      ctx.restore();
+      ctx.globalAlpha = 1;
+    }
+
+    _drawGloss(ctx) {
+      // premium glass: a soft specular highlight sweeping down the road
+      const nL = this.roadNearL, nR = this.roadNearR, fL = this.roadFarL, fR = this.roadFarR;
+      ctx.save();
+      this._roundedTrap(ctx, nL, nR, fL, fR); ctx.clip();
+      ctx.globalCompositeOperation = 'lighter';
+      const sweep = (this.time * 0.12) % 1.4 - 0.2;     // 0..1.2 loop
+      const yy = this.horizonY + (this.groundY - this.horizonY) * sweep;
+      const grd = ctx.createLinearGradient(0, yy - this.H * 0.12, 0, yy + this.H * 0.12);
+      grd.addColorStop(0, 'rgba(120,240,255,0)');
+      grd.addColorStop(0.5, 'rgba(150,250,255,0.07)');
+      grd.addColorStop(1, 'rgba(120,240,255,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, yy - this.H * 0.12, this.W, this.H * 0.24);
+      ctx.restore();
     }
 
     _drawVignette(ctx) {

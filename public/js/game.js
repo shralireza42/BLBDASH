@@ -63,6 +63,10 @@
       this.entities = [];
       this.nextChunk = 0;
       this.particles = [];
+      this.pops = [];           // coin pickup pop rings
+      this.laneShift = 0;       // lane-switch velocity (for body lean)
+      this.landImpact = 0;      // 0..1 landing squash amount
+      this.shakeUntil = 0;      // camera shake end time (ms)
       this.startedAt = 0;
       this.magnet = 0;
       this.animator = (window.Character && window.Character.Animator) ? new window.Character.Animator() : null;
@@ -223,18 +227,22 @@
       const speed = S.speedAt(this.traveled);
       this.traveled += speed * dt;
 
-      // lane interpolation
-      const diff = this.targetLane - this.lane;
-      const move = LANE_SPEED * dt;
-      if (Math.abs(diff) <= move) this.lane = this.targetLane;
-      else this.lane += Math.sign(diff) * move;
+      // lane interpolation — eased (snappy ease-out, no teleport)
+      this.laneShift = this.targetLane - this.lane;      // signed, drives body lean
+      this.lane += this.laneShift * Math.min(1, dt * 13);
+      if (Math.abs(this.targetLane - this.lane) < 0.001) this.lane = this.targetLane;
 
-      // vertical physics
+      // vertical physics (+ landing impact for squash)
+      const wasAir = this.air > 0.001;
       if (this.air > 0.001 || this.vy !== 0) {
         this.vy -= GRAVITY * dt;
         this.air += this.vy * dt;
-        if (this.air <= 0) { this.air = 0; this.vy = 0; }
+        if (this.air <= 0) {
+          this.air = 0; this.vy = 0;
+          if (wasAir) this.landImpact = 1; // trigger landing squash
+        }
       }
+      if (this.landImpact > 0) this.landImpact = Math.max(0, this.landImpact - dt * 5);
       if (this.sliding) {
         this.slideTimer -= dt;
         if (this.slideTimer <= 0) this.sliding = false;
@@ -243,9 +251,11 @@
       this._ensureChunks();
       this._collisions();
 
-      // particles
+      // particles + coin-pop rings
       for (const p of this.particles) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 240 * dt; }
       this.particles = this.particles.filter((p) => p.life > 0);
+      for (const r of this.pops) { r.t += dt; }
+      this.pops = this.pops.filter((r) => r.t < r.life);
 
       // smooth every opponent ghost toward its latest networked state
       const k = Math.min(1, dt * 10);
@@ -307,11 +317,14 @@
           life: 0.5, color: i % 2 ? '#16f2d6' : '#ffe27a', r: 2 + Math.random() * 2.5, glow: true,
         });
       }
+      // pickup pop ring
+      this.pops.push({ x: p.x, y: p.y, t: 0, life: 0.35, r0: 8, r1: 30, color: '#ffe27a' });
     }
 
     _die() {
       if (!this.alive) return;
       this.alive = false;
+      this.shakeUntil = performance.now() + 420; // camera shake on impact
       if (window.Sound) window.Sound.crash();
       const p = this._project(PLAYER_Z, S.LANE_OFFSETS[this.targetLane], this.air);
       for (let i = 0; i < 22; i++) {
@@ -344,6 +357,16 @@
       if (this.bg) this.bg.draw(ctx);
       this._drawSpeedLines(ctx); // scrolling lane cross-lines for forward-motion feel
 
+      // camera shake jolts the gameplay layer only (keeps bg edges clean)
+      const now = performance.now();
+      let shx = 0, shy = 0;
+      if (now < this.shakeUntil) {
+        const m = ((this.shakeUntil - now) / 420) * 9;
+        shx = (Math.random() - 0.5) * m * 2; shy = (Math.random() - 0.5) * m * 2;
+      }
+      ctx.save();
+      ctx.translate(shx, shy);
+
       // entities sorted far -> near for painter's algorithm
       const visible = this.entities
         .filter((e) => { const z = e.dist - this.traveled; return z > COLLIDE_BACK && z < VIEW; })
@@ -366,6 +389,28 @@
 
       this._drawPlayer(ctx);
       this._drawParticles(ctx);
+      this._drawPops(ctx);
+      ctx.restore();
+    }
+
+    // depth fog: entities emerge from the underwater haze as they approach
+    _fog(z) {
+      const t = (VIEW - z) / (VIEW * 0.55);
+      return Math.max(0.12, Math.min(1, t));
+    }
+
+    _drawPops(ctx) {
+      for (const r of this.pops) {
+        const k = r.t / r.life;
+        const rad = r.r0 + (r.r1 - r.r0) * k;
+        ctx.save();
+        ctx.globalAlpha = (1 - k) * 0.8;
+        ctx.strokeStyle = r.color;
+        ctx.shadowColor = r.color; ctx.shadowBlur = 12;
+        ctx.lineWidth = 3 * (1 - k) + 1;
+        ctx.beginPath(); ctx.arc(r.x, r.y, rad, 0, 7); ctx.stroke();
+        ctx.restore();
+      }
     }
 
     // Scrolling neon cross-lines on the (static) shared road for a forward-motion
@@ -400,7 +445,16 @@
       const s = p.scale;
       const kind = this._seaKind(e);
       const x = p.x, y = p.y;
+
+      // contact shadow on the road (grounds the obstacle)
       ctx.save();
+      ctx.globalAlpha = this._fog(z) * 0.4;
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.ellipse(x, y + 3 * s, 44 * s, 13 * s, 0, 0, 7); ctx.fill();
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalAlpha = this._fog(z); // emerge from the underwater haze
       ctx.lineWidth = Math.max(1, 2 * s);
 
       if (kind === 'puffer') {            // jump over: spiky pufferfish on the seabed
@@ -477,10 +531,18 @@
       const r = 13 * p.scale;
       const t = this.time * 6 + e.id;
       const sx = Math.abs(Math.cos(t)) * 0.7 + 0.3; // spin
+      const fog = this._fog(z);
+      // tiny ground shadow under the floating coin
+      if (e.h > 0) {
+        const g0 = this._project(z, S.LANE_OFFSETS[e.lane], 0);
+        ctx.save(); ctx.globalAlpha = fog * 0.25; ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.ellipse(g0.x, g0.y, 11 * p.scale, 4 * p.scale, 0, 0, 7); ctx.fill(); ctx.restore();
+      }
       ctx.save();
+      ctx.globalAlpha = fog;
       ctx.translate(p.x, p.y);
       // neon glow halo
-      this._neon(ctx, '#16f2d6', 16);
+      this._neon(ctx, '#16f2d6', 20);
       ctx.scale(sx, 1);
       const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.2, 0, 0, r);
       g.addColorStop(0, '#eafff9');
@@ -501,13 +563,31 @@
       if (!this.alive) return; // loser character is removed (only the burst plays)
       // laneWorld goes -1 (left) .. 1 (right); this.lane is 0..2.
       const p = this._project(PLAYER_Z, this.lane - 1, this.air);
-      const size = this.H * 0.18;
+      const size = this.H * 0.2;
       let state = 'run';
       if (this.air > 0.02) state = 'jump';
       else if (this.sliding) state = 'slide';
-      // Exact animation frame from the controller (falls back to state-based art).
       const frame = this.animator ? this.animator.currentFrame() : null;
-      window.Blobbie.draw(ctx, p.x, p.y, size, { frame, state, time: this.time, alpha: this.alive ? 1 : 0.4 });
+
+      // --- juice: lane lean + jump squash/stretch + run bounce ---
+      const lean = Math.max(-0.9, Math.min(0.9, this.laneShift)) * 0.22;
+      let sx = 1, sy = 1;
+      if (this.air > 0.001 || this.vy !== 0) {
+        const v = Math.max(-1, Math.min(1, this.vy / JUMP_V));
+        sy = 1 + v * 0.14; sx = 1 - v * 0.10;       // stretch up, pinch in while airborne
+      } else if (this.landImpact > 0) {
+        sy = 1 - this.landImpact * 0.22; sx = 1 + this.landImpact * 0.18; // squash on landing
+      }
+      const bob = (state === 'run' && this.air < 0.01)
+        ? Math.abs(Math.sin(this.time * 9)) * size * 0.025 : 0;
+
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(lean);
+      ctx.scale(sx, sy);
+      ctx.translate(-p.x, -p.y);
+      window.Blobbie.draw(ctx, p.x, p.y - bob, size, { frame, state, time: this.time, alpha: 1 });
+      ctx.restore();
     }
 
     _drawGhost(ctx, o) {
