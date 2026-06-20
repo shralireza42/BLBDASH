@@ -59,7 +59,8 @@
       this.socket = io({ transports: ['websocket', 'polling'] });
       const events = [
         'auth:ok', 'auth:error', 'queue:waiting', 'queue:error', 'queue:left',
-        'room:created', 'room:error', 'match:found', 'match:start', 'match:cancelled',
+        'room:created', 'room:update', 'room:left', 'room:error',
+        'match:found', 'match:start', 'match:cancelled',
         'opponent:progress', 'opponent:finished', 'match:result',
       ];
       events.forEach((ev) => {

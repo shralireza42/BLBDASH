@@ -169,10 +169,34 @@ h2 { font-size: 22px; margin: 0 0 8px; text-shadow: var(--neon-cyan); }
 }
 .hud-score { font-size: 34px; font-weight: 900; line-height: 1; }
 .hud-sub { font-size: 13px; color: #ffe9a8; margin-top: 2px; }
-.hud-right { text-align: right; background: rgba(0,0,0,.3); padding: 8px 12px; border-radius: 12px; border: 1px solid rgba(57,217,138,.4); }
-.opp-name { font-size: 12px; color: var(--green); font-weight: 700; }
-.opp-score { font-size: 24px; font-weight: 900; }
-.opp-tag { font-size: 11px; color: var(--muted); min-height: 13px; }
+.hud-right { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; pointer-events: none; }
+.rival {
+  display: flex; align-items: center; gap: 8px; min-width: 116px; justify-content: space-between;
+  background: rgba(3,8,24,.45); padding: 5px 10px; border-radius: 10px;
+  border: 1px solid rgba(57,255,158,.4); box-shadow: 0 0 10px rgba(57,255,158,.18);
+}
+.rival.out { opacity: .5; border-color: rgba(255,255,255,.2); box-shadow: none; }
+.rival .rname { font-size: 11px; color: var(--green); font-weight: 700; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rival .rscore { font-size: 17px; font-weight: 900; }
+
+.room-members { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 16px; }
+.room-member {
+  background: rgba(22,242,214,.08); border: 1px solid var(--card-brd); border-radius: 10px;
+  padding: 10px 14px; font-weight: 700; display: flex; justify-content: space-between; align-items: center;
+}
+.host-tag { font-size: 10px; font-weight: 800; color: #04122a; background: var(--cyan); padding: 2px 8px; border-radius: 999px; }
+
+.standings { display: flex; flex-direction: column; gap: 6px; margin: 10px 0 14px; }
+.standing {
+  display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 10px;
+  background: rgba(0,0,0,.22); border: 1px solid var(--card-brd); border-radius: 12px; padding: 10px 14px; text-align: left;
+}
+.standing.me { border-color: var(--gold); box-shadow: 0 0 12px rgba(255,210,63,.25); }
+.standing.out { opacity: .55; }
+.standing .st-rank { font-weight: 900; font-size: 18px; text-align: center; }
+.standing .st-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.standing .st-score { font-weight: 900; font-size: 18px; }
+.standing .st-score small { font-size: 11px; color: #ffe9a8; font-weight: 600; }
 
 .countdown {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;

@@ -10,8 +10,9 @@
     config: { entryFee: 50, startingBalance: 1000, coinValue: 5 },
     game: null,
     mode: null,            // 'solo' | 'ranked' | 'friend'
-    match: null,           // { matchId, seed, ranked, opponent:{name} }
-    opp: null,             // live opponent progress
+    match: null,           // { matchId, seed, ranked, players:[{id,name}] }
+    myId: null,            // my player id within the match roster
+    opps: {},              // id -> live rival { id, name, score, alive }
     countTimer: null,
     finished: false,
     lastProgressSent: 0,
@@ -165,6 +166,7 @@
     $('lobbyTitle').textContent = 'Finding a rival…';
     $('lobbyText').textContent = 'Staking ' + state.config.entryFee + ' $BLOBBIE · winner takes the pool.';
     $('roomCodeBox').classList.add('hidden');
+    $('roomPanel').classList.add('hidden');
     $('joinRoomBox').classList.add('hidden');
     $('friendChoice').classList.add('hidden');
     Net.send('queue:join');
@@ -172,15 +174,17 @@
 
   function openFriendLobby() {
     showScreen('lobby');
-    $('lobbyTitle').textContent = 'Play a Friend';
-    $('lobbyText').textContent = 'Create a room and share the code, or join your friend.';
+    $('lobbyTitle').textContent = 'Play with Friends';
+    $('lobbyText').textContent = 'Up to 4 players. Create a room and share the code, or join one.';
     $('roomCodeBox').classList.add('hidden');
+    $('roomPanel').classList.add('hidden');
     $('friendChoice').classList.remove('hidden');
     $('joinRoomBox').classList.remove('hidden');
   }
 
   function cancelLobby() {
     Net.send('queue:leave');
+    Net.send('room:leave');
     showScreen('menu');
     refreshMe();
   }
@@ -194,14 +198,21 @@
     // opts: { solo, seed, ghost, match }
     destroyGame();
     state.finished = false;
-    state.opp = null;
+    state.opps = {};
     showScreen('game');
-    $('hudOpponent').style.display = opts.solo ? 'none' : 'block';
+    $('hudRivals').style.display = opts.solo ? 'none' : 'flex';
+    $('hudRivals').innerHTML = '';
     $('hudScore').textContent = '0';
     $('hudCoins').textContent = '0';
     $('hudDist').textContent = '0';
-    $('oppScore').textContent = '0';
-    $('oppTag').textContent = '';
+
+    // pre-seed rival HUD from the match roster (everyone but me)
+    if (!opts.solo && state.match && state.match.players) {
+      state.match.players.forEach((pl) => {
+        if (pl.id !== state.myId) state.opps[pl.id] = { id: pl.id, name: pl.name, score: 0, alive: true };
+      });
+      renderRivals();
+    }
 
     // canvas needs layout to measure; build on next frame
     requestAnimationFrame(() => {
@@ -217,11 +228,22 @@
         runCountdown(3000, () => state.game.start());
       } else {
         // PvP: tell server we're ready; wait for synced match:start
-        $('oppName').textContent = (state.match && state.match.opponent.name) || 'Rival';
         Net.send('match:ready', { matchId: state.match.matchId });
         $('lobbyText').textContent = '';
       }
     });
+  }
+
+  function renderRivals() {
+    const el = $('hudRivals');
+    if (!el) return;
+    const rivals = Object.keys(state.opps).map((id) => state.opps[id])
+      .sort((a, b) => (b.score || 0) - (a.score || 0));
+    el.innerHTML = rivals.map((r) =>
+      '<div class="rival' + (r.alive === false ? ' out' : '') + '">' +
+      '<span class="rname">' + escapeHtml(r.name || 'Rival') + (r.alive === false ? ' • out' : '') + '</span>' +
+      '<span class="rscore">' + (r.score || 0) + '</span></div>'
+    ).join('');
   }
 
   function runCountdown(ms, done) {
@@ -280,12 +302,22 @@
         distance: result.distance, coins: result.coins,
       });
       // show waiting overlay until server result
-      $('oppTag').textContent = 'You finished — waiting…';
       const cd = $('countdown');
       cd.classList.remove('hidden');
       $('countNum').textContent = '…';
       state._pendingResult = result;
     }
+  }
+
+  function renderStandings(standings, myId) {
+    $('resultStandings').innerHTML = standings.map((s) => {
+      const me = s.id === myId;
+      const medal = s.rank === 1 ? '🥇' : s.rank === 2 ? '🥈' : s.rank === 3 ? '🥉' : '#' + s.rank;
+      return '<div class="standing' + (me ? ' me' : '') + (s.forfeited ? ' out' : '') + '">' +
+        '<span class="st-rank">' + medal + '</span>' +
+        '<span class="st-name">' + escapeHtml(s.name || 'Player') + (me ? ' (you)' : '') + (s.forfeited ? ' • left' : '') + '</span>' +
+        '<span class="st-score">' + (s.score || 0) + '<small> · ' + (s.coins || 0) + '🪙</small></span></div>';
+    }).join('');
   }
 
   function showSoloResult(result) {
@@ -295,11 +327,7 @@
     $('resultBanner').className = 'result-banner win';
     if (window.Sound) window.Sound.win();
     requestAnimationFrame(() => drawCharCanvas($('resultBlob'), 'win'));
-    $('resYouScore').textContent = result.score;
-    $('resYouCoins').textContent = result.coins;
-    $('resYouDist').textContent = result.distance;
-    $('resultVs').classList.add('hidden');
-    $('resultOpp').classList.add('hidden');
+    renderStandings([{ rank: 1, name: 'You', score: result.score, coins: result.coins, distance: result.distance, id: '__me' }], '__me');
     $('resultPrize').classList.remove('hidden');
     $('resultPrize').innerHTML = 'Solo practice — not ranked. Try <b>Ranked PvP</b> to earn $BLOBBIE and climb the leaderboard!';
     refreshMe();
@@ -318,21 +346,13 @@
     if (window.Sound) { if (data.outcome === 'win') window.Sound.win(); else if (data.outcome === 'lose') window.Sound.lose(); }
     requestAnimationFrame(() => drawCharCanvas($('resultBlob'), resultRole));
 
-    $('resYouScore').textContent = data.you.score;
-    $('resYouCoins').textContent = data.you.coins;
-    $('resYouDist').textContent = data.you.distance;
-    $('resultVs').classList.remove('hidden');
-    $('resultOpp').classList.remove('hidden');
-    $('resOppName').textContent = data.opponent.name || 'Rival';
-    $('resOppScore').textContent = data.opponent.score;
-    $('resOppCoins').textContent = data.opponent.coins;
-    $('resOppDist').textContent = data.opponent.distance;
+    renderStandings(data.standings || [], state.myId);
 
     const prize = $('resultPrize');
     prize.classList.remove('hidden');
     if (data.ranked) {
       if (data.outcome === 'win') prize.innerHTML = '🪙 You won <b>' + data.prize + ' $BLOBBIE</b> from the ' + data.pool + ' pool!';
-      else if (data.outcome === 'tie') prize.innerHTML = 'Tie — your <b>' + data.prize + ' $BLOBBIE</b> entry was refunded.';
+      else if (data.outcome === 'tie') prize.innerHTML = 'Tie — you got <b>' + data.prize + ' $BLOBBIE</b>.';
       else prize.innerHTML = 'You lost your entry fee. Your score still counts on the leaderboard!';
     } else {
       prize.innerHTML = 'Friendly match — no $BLOBBIE staked.';
@@ -359,19 +379,17 @@
       showScreen('menu');
     });
     Net.on('room:created', (d) => {
-      $('lobbyTitle').textContent = 'Room ready!';
-      $('lobbyText').textContent = 'Waiting for your friend to join…';
-      $('friendChoice').classList.add('hidden');
-      $('joinRoomBox').classList.add('hidden');
       $('roomCode').textContent = d.code;
       $('roomCodeBox').classList.remove('hidden');
     });
+    Net.on('room:update', (d) => renderRoom(d));
     Net.on('room:error', (d) => {
-      const m = { not_found: 'Room not found.', room_full: 'Room is full.', cannot_join_self: "You can't join your own room.", player_gone: 'Host left.' };
+      const m = { not_found: 'Room not found.', room_full: 'Room is full (max 4).', not_host: 'Only the host can start.', need_players: 'Need at least 2 players.', player_gone: 'Host left.' };
       toast(m[d.error] || 'Room error.');
     });
     Net.on('match:found', (d) => {
-      state.match = { matchId: d.matchId, seed: d.seed, ranked: d.ranked, opponent: d.opponent, pool: d.pool, fee: d.fee };
+      state.match = { matchId: d.matchId, seed: d.seed, ranked: d.ranked, players: d.players, pool: d.pool, fee: d.fee };
+      state.myId = d.you && d.you.id;
       state.mode = d.ranked ? 'ranked' : 'friend';
       startGame({ solo: false, seed: d.seed, match: state.match });
       refreshMe();
@@ -381,25 +399,52 @@
       runCountdown(remain || 3000, () => { if (state.game) state.game.start(); });
     });
     Net.on('opponent:progress', (d) => {
-      state.opp = d;
-      $('oppName').textContent = d.name || 'Rival';
-      $('oppScore').textContent = d.score;
-      $('oppTag').textContent = d.alive === false ? 'finished' : '';
+      const id = d.id == null ? '_' : d.id;
+      state.opps[id] = Object.assign(state.opps[id] || {}, d, { alive: d.alive });
+      renderRivals();
       if (state.game) state.game.setOpponent(d);
     });
     Net.on('opponent:finished', (d) => {
-      $('oppTag').textContent = 'finished';
-      // keep their last lane/frame so the ghost freezes in place, marked OUT
-      if (state.game) state.game.setOpponent(Object.assign({}, state.opp || {}, d, { alive: false }));
+      const id = d.id == null ? '_' : d.id;
+      const prev = state.opps[id] || {};
+      state.opps[id] = Object.assign({}, prev, d, { alive: false });
+      renderRivals();
+      // freeze their ghost in place and mark dead (it is then removed from the track)
+      if (state.game) state.game.setOpponent(Object.assign({}, prev, d, { alive: false }));
     });
     Net.on('match:result', (d) => showPvpResult(d));
     Net.on('match:cancelled', (d) => {
-      toast('Match cancelled' + (d && d.reason === 'disconnect' ? ' (opponent left)' : '') + '.');
+      toast('Match cancelled' + (d && d.reason === 'disconnect' ? ' (a player left)' : '') + '.');
       destroyGame();
       state.match = null;
       showScreen('menu');
       refreshMe();
     });
+  }
+
+  function renderRoom(d) {
+    // switch the lobby into "in room" view
+    $('friendChoice').classList.add('hidden');
+    $('joinRoomBox').classList.add('hidden');
+    $('roomCode').textContent = d.code;
+    $('roomCodeBox').classList.remove('hidden');
+    $('roomPanel').classList.remove('hidden');
+    $('lobbyTitle').textContent = 'Friend Lobby';
+    $('lobbyText').textContent = d.members.length + '/' + (d.max || 4) + ' players';
+    $('roomMembers').innerHTML = d.members.map((m) =>
+      '<div class="room-member">' + escapeHtml(m.name) +
+      (m.id === d.hostId ? ' <span class="host-tag">host</span>' : '') + '</div>'
+    ).join('');
+    const startBtn = $('btnStartRoom');
+    if (d.isHost) {
+      startBtn.classList.remove('hidden');
+      startBtn.disabled = !d.canStart;
+      startBtn.textContent = d.canStart ? 'Start Match (' + d.members.length + ')' : 'Waiting for players…';
+      $('roomWait').textContent = '';
+    } else {
+      startBtn.classList.add('hidden');
+      $('roomWait').textContent = 'Waiting for the host to start…';
+    }
   }
 
   // ---------------- modals ----------------
@@ -491,6 +536,7 @@
       if (code.length !== 4) { toast('Enter a 4-letter code.'); return; }
       Net.send('room:join', { code });
     };
+    $('btnStartRoom').onclick = () => { Net.send('room:start'); };
 
     $('btnQuit').onclick = quitGame;
     $('btnBackMenu').onclick = () => { state.match = null; state.mode = null; showScreen('menu'); refreshMe(); };

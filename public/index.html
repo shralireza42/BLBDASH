@@ -107,6 +107,12 @@
           </div>
         </div>
 
+        <div id="roomPanel" class="hidden">
+          <div id="roomMembers" class="room-members"></div>
+          <button class="btn btn-primary btn-block" id="btnStartRoom">Start Match</button>
+          <div id="roomWait" class="hint"></div>
+        </div>
+
         <div id="friendChoice" class="hidden">
           <button class="btn btn-primary btn-block" id="btnCreateRoom">Create a Room</button>
           <div class="or-divider"><span>or</span></div>
@@ -135,11 +141,7 @@
             <div class="hud-score" id="hudScore">0</div>
             <div class="hud-sub"><span id="hudCoins">0</span> 🪙 · <span id="hudDist">0</span> m</div>
           </div>
-          <div class="hud-right" id="hudOpponent">
-            <div class="opp-name" id="oppName">Rival</div>
-            <div class="opp-score" id="oppScore">0</div>
-            <div class="opp-tag" id="oppTag"></div>
-          </div>
+          <div class="hud-right" id="hudRivals"></div>
         </div>
 
         <!-- countdown -->
@@ -162,21 +164,7 @@
       <div class="card center result-card">
         <div id="resultBanner" class="result-banner">Game Over</div>
         <canvas id="resultBlob" class="result-blob" width="120" height="120"></canvas>
-        <div class="result-grid">
-          <div class="result-you">
-            <div class="rl">You</div>
-            <div class="rscore" id="resYouScore">0</div>
-            <div class="rsub"><span id="resYouCoins">0</span> 🪙 · <span id="resYouDist">0</span> m</div>
-          </div>
-          <div id="resultVs" class="result-vs hidden">
-            <span>VS</span>
-          </div>
-          <div id="resultOpp" class="result-opp hidden">
-            <div class="rl" id="resOppName">Rival</div>
-            <div class="rscore" id="resOppScore">0</div>
-            <div class="rsub"><span id="resOppCoins">0</span> 🪙 · <span id="resOppDist">0</span> m</div>
-          </div>
-        </div>
+        <div id="resultStandings" class="standings"></div>
         <div id="resultPrize" class="result-prize hidden"></div>
         <div class="result-actions">
           <button class="btn btn-primary" id="btnPlayAgain">Play Again</button>

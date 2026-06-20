@@ -62,7 +62,7 @@ const io = new Server(server, { cors: { origin: '*' } });
 // ---- in-memory match state ----
 const matches = new Map();     // matchId -> match
 const rankedQueue = [];        // [{ socketId, playerId }]
-const rooms = new Map();       // code -> { matchId }
+const rooms = new Map();       // code -> { code, hostPlayer, members: [{playerId, socketId, name}] }
 const socketsByPlayer = new Map();
 
 function makeMatchId() { return crypto.randomBytes(8).toString('hex'); }
@@ -74,34 +74,35 @@ function makeRoomCode() {
   return c;
 }
 
-function opponentOf(match, playerId) {
-  return match.players.find((p) => p.id !== playerId);
+function othersOf(match, playerId) {
+  return match.players.filter((p) => p.id !== playerId);
 }
 
-function createMatch(mode, a, b, ranked) {
+// members: array of { playerId, socketId, name }  (2..4 players)
+function createMatch(mode, members, ranked) {
   const id = makeMatchId();
   const matchSeed = (Math.floor(Math.random() * 0xFFFFFFFF) >>> 0) || 1;
   const fee = ranked ? ENTRY_FEE : 0;
-  const pool = fee * 2;
+  const pool = fee * members.length;
   const match = {
     id, mode, ranked, seed: matchSeed, fee, pool,
     state: 'found',
-    players: [a, b].map((x) => ({
+    players: members.map((x) => ({
       id: x.playerId, name: x.name, socketId: x.socketId,
-      ready: false, finished: false, alive: true,
+      ready: false, finished: false, alive: true, forfeited: false,
       result: { score: 0, distance: 0, coins: 0 },
     })),
     createdAt: Date.now(),
   };
   matches.set(id, match);
+  const roster = match.players.map((q) => ({ id: q.id, name: q.name }));
   for (const pl of match.players) {
     const sock = io.sockets.sockets.get(pl.socketId);
     if (sock) sock.data.matchId = id;
-    const opp = opponentOf(match, pl.id);
     io.to(pl.socketId).emit('match:found', {
       matchId: id, seed: matchSeed, ranked, fee, pool,
-      opponent: { name: opp.name },
-      you: { name: pl.name },
+      you: { id: pl.id, name: pl.name },
+      players: roster,
     });
   }
   return match;
@@ -123,54 +124,65 @@ function settleMatch(match, reason) {
   if (match.state === 'done') return;
   match.state = 'done';
   if (match.finishTimer) clearTimeout(match.finishTimer);
-
-  const [p1, p2] = match.players;
   const week = db.currentWeek();
 
-  // determine winner by score (already = distance + coins*value)
-  let winner = null, tie = false;
-  if (p1.result.score > p2.result.score) winner = p1;
-  else if (p2.result.score > p1.result.score) winner = p2;
-  else tie = true;
+  // rank by score (forfeiters sink to the bottom and can't win)
+  const eff = (p) => (p.forfeited ? -1 : p.result.score);
+  const order = [...match.players].sort((a, b) => eff(b) - eff(a));
+  const topEff = eff(order[0]);
+  const winners = order.filter((p) => !p.forfeited && eff(p) === topEff && topEff >= 0);
+  const tie = winners.length > 1;
+  const noWinner = winners.length === 0;
+  const winnerId = (!tie && !noWinner) ? winners[0].id : null;
 
-  let prize = 0, rakeAmt = 0;
+  let prize = 0, rakeAmt = 0, tieShare = 0;
   if (match.ranked) {
-    // both ranked scores count toward the leaderboard / tournament
     for (const pl of match.players) {
+      if (pl.forfeited) continue;
       const pdata = db.getPlayer(pl.id);
       if (pdata) db.submitScore(pdata, pl.result.score, pl.result.distance, pl.result.coins);
     }
-    if (tie) {
-      // refund entry fees
-      for (const pl of match.players) db.adjustBalance(pl.id, match.fee);
+    if (noWinner) {
+      for (const pl of match.players) db.adjustBalance(pl.id, match.fee); // refund
+    } else if (tie) {
+      tieShare = Math.floor(match.pool / winners.length);
+      for (const w of winners) db.adjustBalance(w.id, tieShare);
     } else {
       rakeAmt = Math.floor(match.pool * RAKE);
       prize = match.pool - rakeAmt;
-      db.adjustBalance(winner.id, prize);
+      db.adjustBalance(winnerId, prize);
       db.addToTournamentPool(week, rakeAmt);
     }
   }
 
-  for (const pl of match.players) {
-    db.recordGame(pl.id, winner === pl, pl.result.score);
-  }
+  for (const pl of match.players) db.recordGame(pl.id, pl.id === winnerId, pl.result.score);
+
+  const p1 = match.players[0], p2 = match.players[1] || { id: null, name: null, result: {} };
   db.recordMatch({
     id: match.id, mode: match.mode, seed: match.seed,
     p1_id: p1.id, p1_name: p1.name, p1_score: p1.result.score,
-    p2_id: p2.id, p2_name: p2.name, p2_score: p2.result.score,
-    winner_id: winner ? winner.id : null, pool: match.pool,
+    p2_id: p2.id, p2_name: p2.name, p2_score: p2.result.score || 0,
+    winner_id: winnerId, pool: match.pool,
   });
 
+  const standings = order.map((p, i) => ({
+    rank: i + 1, id: p.id, name: p.name,
+    score: p.result.score, distance: p.result.distance, coins: p.result.coins,
+    forfeited: p.forfeited,
+  }));
+
   for (const pl of match.players) {
-    const opp = opponentOf(match, pl.id);
-    const outcome = tie ? 'tie' : (winner === pl ? 'win' : 'lose');
+    let outcome;
+    if (tie && winners.some((w) => w.id === pl.id)) outcome = 'tie';
+    else if (pl.id === winnerId) outcome = 'win';
+    else outcome = 'lose';
     const fresh = db.getPlayer(pl.id);
     io.to(pl.socketId).emit('match:result', {
       matchId: match.id, outcome, reason: reason || 'finished',
       ranked: match.ranked, pool: match.pool,
-      prize: outcome === 'win' ? prize : (tie && match.ranked ? match.fee : 0),
+      prize: outcome === 'win' ? prize : (outcome === 'tie' && match.ranked ? tieShare : 0),
       rake: rakeAmt,
-      you: pl.result, opponent: { name: opp.name, ...opp.result, alive: opp.alive },
+      you: pl.result, standings,
       player: db.publicPlayer(fresh),
     });
     const sock = io.sockets.sockets.get(pl.socketId);
@@ -195,8 +207,39 @@ function tryMatchmake() {
     // escrow fees
     db.adjustBalance(pa.id, -ENTRY_FEE);
     db.adjustBalance(pb.id, -ENTRY_FEE);
-    createMatch('ranked', { ...a, name: pa.username }, { ...b, name: pb.username }, true);
+    createMatch('ranked', [
+      { playerId: pa.id, socketId: a.socketId, name: pa.username },
+      { playerId: pb.id, socketId: b.socketId, name: pb.username },
+    ], true);
   }
+}
+
+const MAX_ROOM = 4;
+
+function broadcastRoom(code) {
+  const room = rooms.get(code);
+  if (!room) return;
+  const members = room.members.map((m) => ({ id: m.playerId, name: m.name }));
+  for (const m of room.members) {
+    io.to(m.socketId).emit('room:update', {
+      code, members, hostId: room.hostPlayer,
+      isHost: m.playerId === room.hostPlayer,
+      canStart: room.members.length >= 2,
+      max: MAX_ROOM,
+    });
+  }
+}
+
+function leaveRoom(socket) {
+  const code = socket.data.roomCode;
+  if (!code) return;
+  socket.data.roomCode = null;
+  const room = rooms.get(code);
+  if (!room) return;
+  room.members = room.members.filter((m) => m.socketId !== socket.id);
+  if (room.members.length === 0) { rooms.delete(code); return; }
+  if (room.hostPlayer === socket.data.playerId) room.hostPlayer = room.members[0].playerId;
+  broadcastRoom(code);
 }
 
 io.on('connection', (socket) => {
@@ -222,29 +265,42 @@ io.on('connection', (socket) => {
   });
   socket.on('queue:leave', () => { removeFromQueue(socket.id); socket.emit('queue:left', {}); });
 
-  // ---- private friend rooms ----
+  // ---- private friend rooms (up to 4 players) ----
   socket.on('room:create', () => {
     if (!socket.data.playerId) return socket.emit('room:error', { error: 'not_authed' });
+    leaveRoom(socket);
     const code = makeRoomCode();
-    rooms.set(code, { hostSocket: socket.id, hostPlayer: socket.data.playerId, hostName: socket.data.name });
+    rooms.set(code, {
+      code, hostPlayer: socket.data.playerId,
+      members: [{ playerId: socket.data.playerId, socketId: socket.id, name: socket.data.name }],
+    });
     socket.data.roomCode = code;
     socket.emit('room:created', { code });
+    broadcastRoom(code);
   });
   socket.on('room:join', (msg) => {
     if (!socket.data.playerId) return socket.emit('room:error', { error: 'not_authed' });
     const code = String((msg && msg.code) || '').toUpperCase().trim();
     const room = rooms.get(code);
     if (!room) return socket.emit('room:error', { error: 'not_found' });
-    if (room.hostPlayer === socket.data.playerId) return socket.emit('room:error', { error: 'cannot_join_self' });
-    if (room.guestPlayer) return socket.emit('room:error', { error: 'room_full' });
-    const host = db.getPlayer(room.hostPlayer);
-    const guest = db.getPlayer(socket.data.playerId);
-    if (!host || !guest) return socket.emit('room:error', { error: 'player_gone' });
+    if (room.members.some((m) => m.playerId === socket.data.playerId)) return; // already in
+    if (room.members.length >= MAX_ROOM) return socket.emit('room:error', { error: 'room_full' });
+    leaveRoom(socket);
+    room.members.push({ playerId: socket.data.playerId, socketId: socket.id, name: socket.data.name });
+    socket.data.roomCode = code;
+    broadcastRoom(code);
+  });
+  socket.on('room:leave', () => { leaveRoom(socket); socket.emit('room:left', {}); });
+  socket.on('room:start', () => {
+    const code = socket.data.roomCode;
+    const room = code && rooms.get(code);
+    if (!room) return socket.emit('room:error', { error: 'not_found' });
+    if (room.hostPlayer !== socket.data.playerId) return socket.emit('room:error', { error: 'not_host' });
+    const members = room.members.filter((m) => io.sockets.sockets.get(m.socketId) && db.getPlayer(m.playerId));
+    if (members.length < 2) return socket.emit('room:error', { error: 'need_players' });
     rooms.delete(code);
-    createMatch('friend',
-      { socketId: room.hostSocket, playerId: host.id, name: host.username },
-      { socketId: socket.id, playerId: guest.id, name: guest.username },
-      false);
+    for (const m of members) { const s = io.sockets.sockets.get(m.socketId); if (s) s.data.roomCode = null; }
+    createMatch('friend', members, false);
   });
 
   // ---- match flow ----
@@ -263,16 +319,16 @@ io.on('connection', (socket) => {
     if (!pl) return;
     pl.result = { score: msg.score | 0, distance: msg.distance | 0, coins: msg.coins | 0 };
     pl.alive = msg.alive !== false;
-    const opp = opponentOf(match, socket.data.playerId);
-    io.to(opp.socketId).emit('opponent:progress', {
-      name: pl.name, score: pl.result.score, distance: pl.result.distance,
+    const payload = {
+      id: pl.id, name: pl.name, score: pl.result.score, distance: pl.result.distance,
       coins: pl.result.coins, alive: pl.alive,
-      // live pose so the rival can be rendered moving on the same track
+      // live pose so each rival can be rendered moving on the same track
       lane: typeof msg.lane === 'number' ? msg.lane : 1,
       air: typeof msg.air === 'number' ? msg.air : 0,
       sliding: !!msg.sliding,
       frame: typeof msg.frame === 'string' ? msg.frame : null,
-    });
+    };
+    for (const o of othersOf(match, socket.data.playerId)) io.to(o.socketId).emit('opponent:progress', payload);
   });
 
   socket.on('match:finish', (msg) => {
@@ -283,8 +339,8 @@ io.on('connection', (socket) => {
     pl.result = { score: msg.score | 0, distance: msg.distance | 0, coins: msg.coins | 0 };
     pl.alive = false;
     pl.finished = true;
-    const opp = opponentOf(match, socket.data.playerId);
-    io.to(opp.socketId).emit('opponent:finished', { name: pl.name, ...pl.result });
+    const fin = { id: pl.id, name: pl.name, ...pl.result };
+    for (const o of othersOf(match, socket.data.playerId)) io.to(o.socketId).emit('opponent:finished', fin);
     if (match.players.every((p) => p.finished)) settleMatch(match, 'finished');
   });
 
@@ -295,7 +351,7 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     removeFromQueue(socket.id);
-    if (socket.data.roomCode) rooms.delete(socket.data.roomCode);
+    leaveRoom(socket);
     const mid = socket.data.matchId;
     if (mid && matches.has(mid)) handleLeaveMatch(socket, matches.get(mid), 'disconnect');
     if (socket.data.playerId) socketsByPlayer.delete(socket.data.playerId);
@@ -306,17 +362,16 @@ function handleLeaveMatch(socket, match, reason) {
   if (!match || match.state === 'done') return;
   const pl = match.players.find((p) => p.id === socket.data.playerId);
   if (!pl) return;
-  // leaver forfeits: their current score stands, opponent is marked alive-winner
+  // the leaver forfeits (can't win); remaining players keep racing
   pl.finished = true;
   pl.alive = false;
+  pl.forfeited = true;
   if (match.state === 'running') {
-    const opp = opponentOf(match, pl.id);
-    // ensure opponent outscores the forfeiter so they win the pool
-    opp.result.score = Math.max(opp.result.score, pl.result.score + 1);
-    opp.finished = true;
-    settleMatch(match, reason);
+    const fin = { id: pl.id, name: pl.name, ...pl.result, left: true };
+    for (const o of othersOf(match, pl.id)) io.to(o.socketId).emit('opponent:finished', fin);
+    if (match.players.every((p) => p.finished)) settleMatch(match, reason);
   } else {
-    // match not yet running -> just cancel and refund any escrow
+    // pre-start: cancel & refund any escrow
     if (match.ranked) for (const p of match.players) db.adjustBalance(p.id, match.fee);
     for (const p of match.players) io.to(p.socketId).emit('match:cancelled', { reason });
     if (match.finishTimer) clearTimeout(match.finishTimer);
