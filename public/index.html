@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
+  <canvas id="bgfx"></canvas>
   <div id="app">
     <!-- top bar -->
     <header id="topbar" class="hidden">
@@ -16,10 +17,13 @@
         <img src="assets/blobbie1.png" alt="Blobbie" class="brand-logo" />
         <span class="brand-name">Blobbie&nbsp;Dash</span>
       </div>
-      <div class="wallet" id="wallet">
-        <span class="coin-ic">🪙</span>
-        <span id="walletBalance">0</span>
-        <span class="wallet-unit">$BLOBBIE</span>
+      <div class="top-right">
+        <div class="wallet" id="wallet">
+          <span class="coin-ic">🪙</span>
+          <span id="walletBalance">0</span>
+          <span class="wallet-unit">$BLOBBIE</span>
+        </div>
+        <button id="btnMute" class="mute-btn" title="Sound on/off" aria-label="Toggle sound">🔊</button>
       </div>
     </header>
 
@@ -199,6 +203,8 @@
   <script src="js/blobbie.js"></script>
   <script src="js/game.js"></script>
   <script src="js/net.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/background.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

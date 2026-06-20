@@ -22,6 +22,16 @@
     // hide the top bar on immersive / pre-login screens
     $('topbar').classList.toggle('hidden', name === 'loading' || name === 'identity' || name === 'game');
     if (name === 'menu') requestAnimationFrame(() => drawCharCanvas($('menuAvatar'), 'avatar'));
+    // pause the neon menu background while the game canvas is on screen
+    if (window.Background) window.Background.setActive(name !== 'game');
+  }
+
+  function updateMuteBtn() {
+    const b = $('btnMute');
+    if (!b || !window.Sound) return;
+    const m = window.Sound.isMuted();
+    b.textContent = m ? '🔇' : '🔊';
+    b.classList.toggle('off', m);
   }
 
   // Render a character role into a small canvas (avatar / result art), with a
@@ -75,6 +85,7 @@
     Net.connect();
     wireEvents();
     wireSocket();
+    wireAudio();
 
     if (Net.loadIdentity()) {
       try {
@@ -85,6 +96,31 @@
       } catch (e) { Net.clearIdentity(); }
     }
     showScreen('identity');
+  }
+
+  function wireAudio() {
+    if (!window.Sound) return;
+    updateMuteBtn();
+    // Unlock + start music on the first user interaction (autoplay policy).
+    const unlock = () => {
+      window.Sound.unlock();
+      if (!window.Sound.isMuted()) window.Sound.startMusic();
+      document.removeEventListener('pointerdown', unlock);
+    };
+    document.addEventListener('pointerdown', unlock);
+
+    // Mute toggle
+    $('btnMute').onclick = () => {
+      const m = window.Sound.toggleMuted();
+      if (!m) { window.Sound.unlock(); window.Sound.startMusic(); window.Sound.click(); }
+      updateMuteBtn();
+    };
+
+    // UI click feedback (menu buttons / cards / tabs)
+    document.addEventListener('click', (e) => {
+      const el = e.target.closest('.btn, .mode-card, .lb-tab, .modal-close');
+      if (el && !window.Sound.isMuted()) window.Sound.click();
+    }, true);
   }
 
   // ---------------- identity ----------------
@@ -196,6 +232,7 @@
       if (remain <= 0) {
         clearInterval(state.countTimer);
         $('countNum').textContent = 'GO!';
+        if (window.Sound) window.Sound.go();
         setTimeout(() => cd.classList.add('hidden'), 350);
         done();
         return;
@@ -203,6 +240,7 @@
       const n = Math.ceil(remain / 1000);
       if ($('countNum').textContent !== String(n)) {
         $('countNum').textContent = n;
+        if (window.Sound) window.Sound.count();
         $('countNum').style.animation = 'none';
         void $('countNum').offsetWidth;
         $('countNum').style.animation = '';
@@ -253,6 +291,7 @@
     showScreen('result');
     $('resultBanner').textContent = 'Run Complete!';
     $('resultBanner').className = 'result-banner win';
+    if (window.Sound) window.Sound.win();
     requestAnimationFrame(() => drawCharCanvas($('resultBlob'), 'win'));
     $('resYouScore').textContent = result.score;
     $('resYouCoins').textContent = result.coins;
@@ -274,6 +313,7 @@
     else if (data.outcome === 'lose') { banner.textContent = 'Defeat'; banner.className = 'result-banner lose'; }
     else { banner.textContent = "It's a Tie!"; banner.className = 'result-banner tie'; }
     const resultRole = data.outcome === 'lose' ? 'lose' : data.outcome === 'tie' ? 'idle' : 'win';
+    if (window.Sound) { if (data.outcome === 'win') window.Sound.win(); else if (data.outcome === 'lose') window.Sound.lose(); }
     requestAnimationFrame(() => drawCharCanvas($('resultBlob'), resultRole));
 
     $('resYouScore').textContent = data.you.score;
