@@ -83,17 +83,17 @@ game code.
 
 - Pieces live in [`public/assets/character/`](public/assets/character/), described by
   [`manifest.json`](public/assets/character/manifest.json) (groups: `top_full_body`,
-  `middle_head`, `middle_pose`, `bottom_asset`).
-- Every piece ships with a **labeled placeholder** (PNG + SVG) at its exact export size,
-  so the game runs out of the box. Open **`/assets/character/preview.html`** in a browser
-  to see every piece, its name/size, and which game state it maps to.
+  `middle_head`, `middle_pose`, `bottom_asset`). **Art is SVG** (vector scales crisply
+  at any size and supports full transparency).
+- Every piece ships with a **labeled placeholder SVG** at its exact export size, so the
+  game runs out of the box. Open **`/assets/character/preview.html`** in a browser to see
+  every piece, its name/size, and which game state it maps to.
 
 **To use your own character:**
 
-1. Export your pieces and drop them into `public/assets/character/png/` (and/or `svg/`)
-   using the **same file names** as in the manifest. PNG is preferred; SVG is used if a
-   PNG is missing; the classic `blobbie1.png` mascot is the final fallback — so nothing
-   ever breaks while you're mid-swap.
+1. Export your pieces as **SVG** and drop them into `public/assets/character/svg/` using the
+   **same file names** as in the manifest. If a piece is ever missing, the classic
+   `blobbie1.png` mascot is the final fallback — so nothing breaks while you're mid-swap.
 2. Choose which piece represents which game state by editing **`ROLES`** at the top of
    [`public/js/character.js`](public/js/character.js):
 
@@ -108,10 +108,26 @@ game code.
    available — point a role at them, or draw them directly with
    `Character.draw(ctx, 'middle_head_03', x, y, height)`.
 
-To regenerate the placeholder art after editing the manifest:
+### Running animation
+
+The engine adds a **procedural run cycle** (vertical hop + squash/stretch + forward lean)
+to the `run` pose, so even a *single* run SVG visibly "runs" — **no GIF needed** (and GIFs
+don't work on canvas anyway: only their first frame is drawn).
+
+Want a true hand-drawn run cycle? Export a few frames and make `run` an **array** — the
+engine cycles them automatically:
+
+```js
+// public/js/character.js
+const ROLES = {
+  run: ['run_01', 'run_02', 'run_03', 'run_04'], // add run_0x.svg to assets/character/svg/
+  // ...
+};
+```
+
+To regenerate the placeholder SVGs after editing the manifest:
 
 ```bash
-npm i -D sharp        # optional, for PNG output (SVGs are always written)
 node scripts/gen-character-placeholders.js
 ```
 
@@ -135,11 +151,11 @@ public/
     blobbie1.png            Mascot used for branding / fallback
     character/
       manifest.json         Character pieces (your art goes here)
-      png/  svg/             Placeholder art at each piece's export size
+      svg/                  Placeholder SVG art at each piece's export size
       preview.html          Gallery of all pieces + role mapping
   embed-example.html
 scripts/
-  gen-character-placeholders.js   Regenerate placeholder art from the manifest
+  gen-character-placeholders.js   Regenerate placeholder SVGs from the manifest
 ```
 
 ## API overview
