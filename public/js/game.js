@@ -128,12 +128,13 @@
       if (!this.alive || this.paused || !this.running) return;
       // Trigger the matching one-shot animation for the key that was pressed.
       if (this.animator) this.animator.play(a === 'jump' ? 'jump' : a === 'slide' ? 'slide' : a);
-      if (a === 'left') { this.targetLane = Math.max(0, this.targetLane - 1); }
-      else if (a === 'right') { this.targetLane = Math.min(2, this.targetLane + 1); }
+      const S2 = window.Sound;
+      if (a === 'left') { if (this.targetLane > 0 && S2) S2.lane(); this.targetLane = Math.max(0, this.targetLane - 1); }
+      else if (a === 'right') { if (this.targetLane < 2 && S2) S2.lane(); this.targetLane = Math.min(2, this.targetLane + 1); }
       else if (a === 'jump') {
-        if (this.air <= 0.001 && !this.sliding) { this.vy = JUMP_V; }
+        if (this.air <= 0.001 && !this.sliding) { this.vy = JUMP_V; if (S2) S2.jump(); }
       } else if (a === 'slide') {
-        if (this.air <= 0.001 && !this.sliding) { this.sliding = true; this.slideTimer = SLIDE_TIME; }
+        if (this.air <= 0.001 && !this.sliding) { this.sliding = true; this.slideTimer = SLIDE_TIME; if (S2) S2.slide(); }
         else if (this.air > 0.001) { this.vy = -JUMP_V * 0.9; } // fast-drop
       }
     }
@@ -253,12 +254,13 @@
 
     _collectCoin(e) {
       this.coins++;
+      if (window.Sound) window.Sound.coin();
       const p = this._project(0.6, S.LANE_OFFSETS[e.lane], e.h);
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 8; i++) {
         this.particles.push({
           x: p.x, y: p.y,
-          vx: (Math.random() - 0.5) * 120, vy: -Math.random() * 160,
-          life: 0.5, color: '#ffd23f', r: 2 + Math.random() * 2,
+          vx: (Math.random() - 0.5) * 130, vy: -Math.random() * 170,
+          life: 0.5, color: i % 2 ? '#16f2d6' : '#ffe27a', r: 2 + Math.random() * 2.5, glow: true,
         });
       }
     }
@@ -266,12 +268,13 @@
     _die() {
       if (!this.alive) return;
       this.alive = false;
+      if (window.Sound) window.Sound.crash();
       const p = this._project(PLAYER_Z, S.LANE_OFFSETS[this.targetLane], this.air);
-      for (let i = 0; i < 18; i++) {
+      for (let i = 0; i < 22; i++) {
         this.particles.push({
           x: p.x, y: p.y - 20,
-          vx: (Math.random() - 0.5) * 320, vy: -Math.random() * 280,
-          life: 0.9, color: i % 2 ? '#ef7a8b' : '#ffffff', r: 3 + Math.random() * 3,
+          vx: (Math.random() - 0.5) * 340, vy: -Math.random() * 300,
+          life: 0.9, color: i % 2 ? '#ff4fd8' : '#16f2d6', r: 3 + Math.random() * 3, glow: true,
         });
       }
       const result = { score: this.score, distance: Math.floor(this.traveled), coins: this.coins };
@@ -312,110 +315,212 @@
 
       this._drawPlayer(ctx);
       this._drawParticles(ctx);
+      this._drawOverlay(ctx, W, H);
     }
 
     _drawBackground(ctx, W, H) {
+      // deep neon ocean water
       const sky = ctx.createLinearGradient(0, 0, 0, this.horizonY + 40);
-      sky.addColorStop(0, '#6a5cff');
-      sky.addColorStop(0.55, '#9b6bff');
-      sky.addColorStop(1, '#ffb3c8');
+      sky.addColorStop(0, '#03021a');
+      sky.addColorStop(0.5, '#0a0a44');
+      sky.addColorStop(1, '#13105e');
       ctx.fillStyle = sky;
       ctx.fillRect(0, 0, W, this.horizonY + 40);
 
-      // sun
-      ctx.fillStyle = 'rgba(255,233,150,0.95)';
-      ctx.beginPath(); ctx.arc(W * 0.74, this.horizonY * 0.55, Math.min(W, H) * 0.09, 0, 7); ctx.fill();
+      // bioluminescent glow orb (neon "sun")
+      const ox = W * 0.74, oy = this.horizonY * 0.5, orad = Math.min(W, H) * 0.13;
+      const og = ctx.createRadialGradient(ox, oy, 0, ox, oy, orad);
+      og.addColorStop(0, 'rgba(120,255,240,0.9)');
+      og.addColorStop(0.4, 'rgba(60,200,255,0.45)');
+      og.addColorStop(1, 'transparent');
+      ctx.fillStyle = og;
+      ctx.beginPath(); ctx.arc(ox, oy, orad, 0, 7); ctx.fill();
 
-      // parallax hills
-      const off = (this.traveled * 6) % (W * 0.6);
-      ctx.fillStyle = 'rgba(123,90,200,0.55)';
-      for (let i = -1; i < 4; i++) {
-        const bx = i * (W * 0.6) - off;
+      // god rays
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 4; i++) {
+        const rx = (i / 4) * W + Math.sin(this.time * 0.2 + i) * 24 + W * 0.1;
+        const grd = ctx.createLinearGradient(rx, 0, rx + 70, this.horizonY);
+        grd.addColorStop(0, 'rgba(80,230,255,0.10)');
+        grd.addColorStop(1, 'transparent');
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.moveTo(rx, 0); ctx.lineTo(rx + 60, 0); ctx.lineTo(rx + 170, this.horizonY); ctx.lineTo(rx - 90, this.horizonY);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+
+      // parallax neon reef silhouette on the horizon
+      const off = (this.traveled * 8) % (W * 0.5);
+      ctx.save();
+      ctx.shadowColor = '#ff4fd8'; ctx.shadowBlur = 16;
+      ctx.fillStyle = 'rgba(60,20,90,0.85)';
+      for (let i = -1; i < 5; i++) {
+        const bx = i * (W * 0.5) - off;
         ctx.beginPath();
         ctx.moveTo(bx, this.horizonY);
-        ctx.quadraticCurveTo(bx + W * 0.3, this.horizonY - H * 0.16, bx + W * 0.6, this.horizonY);
-        ctx.fill();
+        ctx.lineTo(bx + W * 0.08, this.horizonY - H * 0.1);
+        ctx.lineTo(bx + W * 0.16, this.horizonY - H * 0.04);
+        ctx.lineTo(bx + W * 0.26, this.horizonY - H * 0.16);
+        ctx.lineTo(bx + W * 0.36, this.horizonY - H * 0.05);
+        ctx.lineTo(bx + W * 0.5, this.horizonY);
+        ctx.closePath(); ctx.fill();
       }
-      // ground fill below horizon
+      ctx.restore();
+
+      // seabed water below horizon
       const g = ctx.createLinearGradient(0, this.horizonY, 0, H);
-      g.addColorStop(0, '#5a3fae');
-      g.addColorStop(1, '#3a2570');
+      g.addColorStop(0, '#0a0838');
+      g.addColorStop(1, '#1a0b4a');
       ctx.fillStyle = g;
       ctx.fillRect(0, this.horizonY, W, H - this.horizonY);
+
+      // ambient rising bubbles (deterministic from time)
+      ctx.save();
+      ctx.strokeStyle = 'rgba(120,240,255,0.45)';
+      ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 6; ctx.lineWidth = 1.3;
+      for (let i = 0; i < 16; i++) {
+        const seed = i * 53.13;
+        const bx = (Math.sin(seed) * 0.5 + 0.5) * W + Math.sin(this.time + i) * 8;
+        const by = H - ((this.time * (18 + (i % 5) * 8) + seed * 30) % (H * 0.9));
+        const br = 2 + (i % 4);
+        ctx.beginPath(); ctx.arc(bx, by, br, 0, 7); ctx.stroke();
+      }
+      ctx.restore();
     }
 
     _drawRoad(ctx, W, H) {
-      // road surface trapezoid (lanes -1.5 .. 1.5)
       const nearL = this._project(PLAYER_Z, -1.55, 0);
       const nearR = this._project(PLAYER_Z, 1.55, 0);
       const farL = this._project(VIEW, -1.55, 0);
       const farR = this._project(VIEW, 1.55, 0);
+      // dark glassy seabed lane
       const road = ctx.createLinearGradient(0, this.horizonY, 0, H);
-      road.addColorStop(0, '#3b2d6b');
-      road.addColorStop(1, '#52407f');
+      road.addColorStop(0, '#0b0730');
+      road.addColorStop(1, '#241158');
       ctx.fillStyle = road;
       ctx.beginPath();
       ctx.moveTo(farL.x, farL.y); ctx.lineTo(farR.x, farR.y);
       ctx.lineTo(nearR.x, nearR.y); ctx.lineTo(nearL.x, nearL.y);
       ctx.closePath(); ctx.fill();
 
-      // lane divider lines
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-      ctx.lineWidth = 2;
-      for (const b of [-0.5, 0.5]) {
-        const a = this._project(PLAYER_Z, b, 0);
-        const c = this._project(VIEW, b, 0);
+      ctx.save();
+      // scrolling neon cross-lines (synthwave grid) within the lane
+      ctx.strokeStyle = 'rgba(22,242,214,0.5)';
+      ctx.shadowColor = '#16f2d6'; ctx.shadowBlur = 8; ctx.lineWidth = 1.5;
+      const dashStart = this.traveled % 3;
+      for (let z = VIEW - dashStart; z > PLAYER_Z; z -= 3) {
+        const a = this._project(z, -1.55, 0);
+        const b = this._project(z, 1.55, 0);
+        ctx.globalAlpha = Math.min(1, a.scale * 1.6);
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // glowing lane dividers (cyan)
+      ctx.strokeStyle = 'rgba(80,255,240,0.85)';
+      ctx.shadowColor = '#16f2d6'; ctx.shadowBlur = 12; ctx.lineWidth = 2;
+      for (const ln of [-0.5, 0.5]) {
+        const a = this._project(PLAYER_Z, ln, 0);
+        const c = this._project(VIEW, ln, 0);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(c.x, c.y); ctx.stroke();
       }
-      // edge rails
-      ctx.strokeStyle = 'rgba(255,210,63,0.9)';
-      ctx.lineWidth = 3;
-      for (const b of [-1.55, 1.55]) {
-        const a = this._project(PLAYER_Z, b, 0);
-        const c = this._project(VIEW, b, 0);
+      // glowing edge rails (magenta)
+      ctx.strokeStyle = 'rgba(255,79,216,0.95)';
+      ctx.shadowColor = '#ff4fd8'; ctx.shadowBlur = 16; ctx.lineWidth = 3;
+      for (const ln of [-1.55, 1.55]) {
+        const a = this._project(PLAYER_Z, ln, 0);
+        const c = this._project(VIEW, ln, 0);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(c.x, c.y); ctx.stroke();
       }
-      // moving dashes down the centre for speed feedback
-      ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-      ctx.lineWidth = 3;
-      const dashStart = this.traveled % 4;
-      for (let z = VIEW - dashStart; z > PLAYER_Z; z -= 4) {
-        const a = this._project(z, 0, 0);
-        const c = this._project(Math.max(PLAYER_Z, z - 1.6), 0, 0);
-        ctx.lineWidth = Math.max(1, a.scale * 5);
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(c.x, c.y); ctx.stroke();
-      }
+      ctx.restore();
     }
+
+    // pick a deterministic sea-creature variant per obstacle
+    _seaKind(e) {
+      if (e.type === 'jump') return e.id % 2 ? 'puffer' : 'clam';
+      if (e.type === 'slide') return e.id % 2 ? 'jelly' : 'kelp';
+      return e.id % 2 ? 'coral' : 'rock';
+    }
+
+    _neon(ctx, color, blur) { ctx.shadowColor = color; ctx.shadowBlur = blur; }
 
     _drawObstacle(ctx, e, z) {
       const p = this._project(z, S.LANE_OFFSETS[e.lane], 0);
       const s = p.scale;
-      const w = 78 * s;
-      if (e.type === 'jump') {
-        const h = 42 * s;
-        ctx.fillStyle = '#ff5d73';
-        ctx.strokeStyle = '#1d1d28'; ctx.lineWidth = Math.max(1, 2 * s);
-        this._roundRect(ctx, p.x - w / 2, p.y - h, w, h, 6 * s, true, true);
-        ctx.fillStyle = 'rgba(255,255,255,0.25)';
-        ctx.fillRect(p.x - w / 2, p.y - h, w, h * 0.3);
-      } else if (e.type === 'slide') {
-        const barH = 26 * s;
-        const top = p.y - 150 * s;
-        ctx.fillStyle = '#3ad0ff';
-        ctx.strokeStyle = '#1d1d28'; ctx.lineWidth = Math.max(1, 2 * s);
-        this._roundRect(ctx, p.x - w / 2, top, w, barH, 6 * s, true, true);
-        // posts
-        ctx.fillStyle = '#bfe9ff';
-        ctx.fillRect(p.x - w / 2, top, 6 * s, 150 * s);
-        ctx.fillRect(p.x + w / 2 - 6 * s, top, 6 * s, 150 * s);
-      } else { // block / wall
-        const h = 120 * s;
-        ctx.fillStyle = '#7b4dff';
-        ctx.strokeStyle = '#1d1d28'; ctx.lineWidth = Math.max(1, 2 * s);
-        this._roundRect(ctx, p.x - w / 2, p.y - h, w, h, 8 * s, true, true);
-        ctx.fillStyle = 'rgba(255,255,255,0.18)';
-        ctx.fillRect(p.x - w / 2, p.y - h, w, h * 0.25);
+      const kind = this._seaKind(e);
+      const x = p.x, y = p.y;
+      ctx.save();
+      ctx.lineWidth = Math.max(1, 2 * s);
+
+      if (kind === 'puffer') {            // jump over: spiky pufferfish on the seabed
+        const r = 30 * s;
+        this._neon(ctx, '#ffb030', 18);
+        ctx.fillStyle = '#ff8c1a'; ctx.strokeStyle = '#fff0c0';
+        // spikes
+        for (let i = 0; i < 12; i++) {
+          const a = (i / 12) * Math.PI * 2;
+          ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * r, y - r + Math.sin(a) * r);
+          ctx.lineTo(x + Math.cos(a) * r * 1.4, y - r + Math.sin(a) * r * 1.4); ctx.stroke();
+        }
+        ctx.beginPath(); ctx.arc(x, y - r, r, 0, 7); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#fff'; this._neon(ctx, '#fff', 0);
+        ctx.beginPath(); ctx.arc(x - r * 0.35, y - r * 1.1, r * 0.18, 0, 7); ctx.arc(x + r * 0.35, y - r * 1.1, r * 0.18, 0, 7); ctx.fill();
+      } else if (kind === 'clam') {       // jump over: glowing clam shell
+        const w = 70 * s, h = 40 * s;
+        this._neon(ctx, '#ff6fae', 16);
+        ctx.fillStyle = '#ff8fc6'; ctx.strokeStyle = '#ffd9ec';
+        ctx.beginPath(); ctx.moveTo(x - w / 2, y);
+        ctx.quadraticCurveTo(x, y - h * 2, x + w / 2, y);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + i * w * 0.2, y - h * 1.3); ctx.stroke(); }
+        this._neon(ctx, '#16f2d6', 14); ctx.fillStyle = '#bff9ff';
+        ctx.beginPath(); ctx.arc(x, y - h * 0.4, 6 * s, 0, 7); ctx.fill(); // pearl
+      } else if (kind === 'jelly') {      // slide under: hanging jellyfish
+        const top = y - 168 * s, w = 70 * s, domeH = 40 * s;
+        this._neon(ctx, '#ff4fd8', 18);
+        ctx.fillStyle = 'rgba(255,120,230,0.85)'; ctx.strokeStyle = '#ffd0f4';
+        ctx.beginPath(); ctx.ellipse(x, top + domeH, w / 2, domeH, 0, Math.PI, 0); ctx.fill(); ctx.stroke();
+        for (let i = -3; i <= 3; i++) {
+          ctx.beginPath(); ctx.moveTo(x + i * w * 0.12, top + domeH);
+          for (let k = 0; k < 4; k++) {
+            const ty = top + domeH + (k + 1) * 20 * s;
+            ctx.quadraticCurveTo(x + i * w * 0.12 + Math.sin(this.time * 4 + k + i) * 6 * s, ty - 10 * s, x + i * w * 0.12 + Math.sin(this.time * 4 + k + i) * 6 * s, ty);
+          }
+          ctx.stroke();
+        }
+      } else if (kind === 'kelp') {       // slide under: overhead glowing kelp arch
+        const top = y - 170 * s, w = 78 * s;
+        this._neon(ctx, '#39ff9e', 16);
+        ctx.strokeStyle = '#7dffc4'; ctx.lineWidth = Math.max(2, 5 * s);
+        for (const sx of [-1, 1]) {
+          ctx.beginPath(); ctx.moveTo(x + sx * w / 2, y);
+          ctx.quadraticCurveTo(x + sx * w * 0.7, top + 40 * s, x, top);
+          ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(57,255,158,0.5)';
+        ctx.beginPath(); ctx.ellipse(x, top, w * 0.5, 14 * s, 0, 0, 7); ctx.fill();
+      } else if (kind === 'coral') {      // dodge: tall neon coral pillar
+        const h = 130 * s, w = 60 * s;
+        this._neon(ctx, '#b14dff', 18);
+        ctx.fillStyle = '#8a3dff'; ctx.strokeStyle = '#e0c0ff';
+        this._roundRect(ctx, x - w / 2, y - h, w, h, 14 * s, true, true);
+        ctx.strokeStyle = '#ff7de0'; ctx.lineWidth = Math.max(1, 2 * s);
+        for (let i = 0; i < 4; i++) { const yy = y - h * (0.2 + i * 0.2); ctx.beginPath(); ctx.moveTo(x - w / 2, yy); ctx.lineTo(x - w, yy - 10 * s); ctx.moveTo(x + w / 2, yy); ctx.lineTo(x + w, yy - 10 * s); ctx.stroke(); }
+      } else {                            // rock: dodge, jagged glowing boulder
+        const h = 120 * s, w = 78 * s;
+        this._neon(ctx, '#3affd8', 16);
+        ctx.fillStyle = '#1c2b5a'; ctx.strokeStyle = '#3affd8';
+        ctx.beginPath();
+        ctx.moveTo(x - w / 2, y);
+        ctx.lineTo(x - w * 0.4, y - h * 0.75);
+        ctx.lineTo(x - w * 0.05, y - h);
+        ctx.lineTo(x + w * 0.35, y - h * 0.7);
+        ctx.lineTo(x + w / 2, y);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
       }
+      ctx.restore();
     }
 
     _drawCoin(ctx, e, z) {
@@ -425,15 +530,18 @@
       const sx = Math.abs(Math.cos(t)) * 0.7 + 0.3; // spin
       ctx.save();
       ctx.translate(p.x, p.y);
+      // neon glow halo
+      this._neon(ctx, '#16f2d6', 16);
       ctx.scale(sx, 1);
       const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.2, 0, 0, r);
-      g.addColorStop(0, '#fff2b0');
-      g.addColorStop(0.6, '#ffd23f');
-      g.addColorStop(1, '#e0a500');
+      g.addColorStop(0, '#eafff9');
+      g.addColorStop(0.55, '#ffe27a');
+      g.addColorStop(1, '#15c2b0');
       ctx.fillStyle = g;
-      ctx.strokeStyle = '#a6760a'; ctx.lineWidth = Math.max(1, 2 * p.scale);
+      ctx.strokeStyle = '#16f2d6'; ctx.lineWidth = Math.max(1, 2 * p.scale);
       ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill(); ctx.stroke();
-      ctx.fillStyle = '#a6760a';
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#0a6b5e';
       ctx.font = 'bold ' + Math.max(8, 15 * p.scale) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('B', 0, 1);
@@ -474,12 +582,23 @@
     }
 
     _drawParticles(ctx) {
+      ctx.save();
       for (const p of this.particles) {
         ctx.globalAlpha = Math.max(0, p.life * 1.6);
         ctx.fillStyle = p.color;
+        if (p.glow) { ctx.shadowColor = p.color; ctx.shadowBlur = 10; } else ctx.shadowBlur = 0;
         ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill();
       }
+      ctx.restore();
       ctx.globalAlpha = 1;
+    }
+
+    _drawOverlay(ctx, W, H) {
+      // neon vignette to frame the scene
+      const vg = ctx.createRadialGradient(W / 2, H * 0.55, Math.min(W, H) * 0.32, W / 2, H * 0.55, Math.max(W, H) * 0.72);
+      vg.addColorStop(0, 'transparent');
+      vg.addColorStop(1, 'rgba(2,0,14,0.55)');
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
     }
 
     _roundRect(ctx, x, y, w, h, r, fill, stroke) {
