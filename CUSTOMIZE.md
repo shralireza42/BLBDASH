@@ -122,9 +122,13 @@ Replace the built-in synthesized audio with your own files (`theme.sounds.*`):
 sounds: {
   music: 'assets/sounds/music.mp3',  // loops
   jump: 'assets/sounds/jump.mp3', coin: 'assets/sounds/coin.mp3', crash: 'assets/sounds/crash.mp3',
+  footstep: 'assets/sounds/footstep.mp3', // plays repeatedly while running
   // also: slide, lane, win, lose, click, count, go
 }
 ```
+
+`footstep` plays on a cadence while Blobbie runs on the ground (the rhythm speeds up
+with the game). It's a soft synth tap by default — set a file to replace it.
 
 ## 8. Gameplay background (image or animated GIF)
 

@@ -143,6 +143,7 @@ window.BlobbieTheme = {
     music: null,  // looping background track, e.g. 'assets/sounds/music.mp3'
     jump: null, slide: null, lane: null, coin: null, crash: null,
     win: null, lose: null, click: null, count: null, go: null,
+    footstep: null, // plays repeatedly while running, e.g. 'assets/sounds/footstep.mp3'
   },
 
   /* -------------------------------------------- GAMEPLAY BACKGROUND IMG ----

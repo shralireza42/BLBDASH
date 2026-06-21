@@ -73,6 +73,7 @@
       this.laneShift = 0;       // lane-switch velocity (for body lean)
       this.landImpact = 0;      // 0..1 landing squash amount
       this.shakeUntil = 0;      // camera shake end time (ms)
+      this.stepTimer = 0.3;     // footstep cadence countdown
       this.startedAt = 0;
       this.magnet = 0;
       this.animator = (window.Character && window.Character.Animator) ? new window.Character.Animator() : null;
@@ -252,6 +253,17 @@
       if (this.sliding) {
         this.slideTimer -= dt;
         if (this.slideTimer <= 0) this.sliding = false;
+      }
+
+      // footsteps while running on the ground (cadence scales with speed)
+      if (this.air <= 0.01 && !this.sliding) {
+        this.stepTimer -= dt;
+        if (this.stepTimer <= 0) {
+          if (window.Sound) window.Sound.footstep();
+          this.stepTimer = Math.max(0.16, Math.min(0.36, 6.5 / speed));
+        }
+      } else {
+        this.stepTimer = Math.min(this.stepTimer, 0.12); // brief pause; resume soon after landing
       }
 
       this._ensureChunks();

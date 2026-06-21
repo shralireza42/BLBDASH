@@ -9,6 +9,7 @@ sounds: {
   jump:  'assets/sounds/jump.mp3',
   coin:  'assets/sounds/coin.mp3',
   crash: 'assets/sounds/crash.mp3',
+  footstep: 'assets/sounds/footstep.mp3', // repeats while running (keep it very short)
   // also: slide, lane, win, lose, click, count, go
 },
 ```
