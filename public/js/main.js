@@ -78,7 +78,30 @@
   }
 
   // ---------------- init ----------------
+  // Apply the editable theme (public/theme.js): UI colors + optional GIF backdrop.
+  function applyTheme() {
+    const T = window.BlobbieTheme || {};
+    const u = T.ui || {};
+    const root = document.documentElement.style;
+    const set = (k, v) => { if (v) root.setProperty(k, v); };
+    set('--text', u.text); set('--muted', u.muted); set('--ink', u.ink);
+    set('--bg0', u.pageBgTop); set('--bg1', u.pageBgBottom);
+    set('--cyan', u.accentCyan); set('--cyan-l', u.accentCyanLight);
+    set('--pink', u.accentPink); set('--pink-d', u.accentPinkDark);
+    set('--purple', u.accentPurple); set('--purple-l', u.accentPurpleLight);
+    set('--green', u.accentGreen); set('--gold', u.gold);
+    set('--card', u.cardBg); set('--card-brd', u.cardBorder);
+
+    if (T.gameplayBackground) {
+      const img = $('worldBgImg');
+      if (img) img.src = T.gameplayBackground;
+      document.body.classList.add('bg-image');
+      if ((T.gameplayBackgroundMode || 'cover') === 'contain') document.body.classList.add('bg-contain');
+    }
+  }
+
   async function init() {
+    applyTheme();
     showScreen('loading');
     if (window.Character) Character.load();
     try { state.config = await Net.getConfig(); } catch (e) {}

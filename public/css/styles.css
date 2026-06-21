@@ -21,6 +21,12 @@
 }
 
 #bgfx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; }
+/* Optional image/GIF world backdrop (set via theme.gameplayBackground) */
+#worldBgImg { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; display: none; }
+body.bg-image #worldBgImg { display: block; }
+body.bg-image.bg-contain #worldBgImg { object-fit: contain; background: #04122a; }
+/* in image-backdrop mode the canvases are transparent so the image shows behind */
+body.bg-image #bgfx, body.bg-image #gameCanvas { background: transparent; }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; margin: 0; }
