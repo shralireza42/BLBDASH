@@ -98,12 +98,21 @@ Two options:
 sprites: { player: 'assets/sprites/player.png' }
 ```
 
-**B. Full animation (recommended):** replace the SVG frames in
-`public/assets/character/svg/` keeping the same file names. The 5 animations are
-run / jump / slide / move-left / move-right. Open `/assets/character/preview.html`
-to see every frame and the input→animation map. To change frame counts or timing,
-edit `ANIM` in [`public/js/character.js`](public/js/character.js). If a frame is
-missing, the game falls back to `assets/blobbie.svg`.
+**B. Full animation (recommended):** replace the character frames keeping the same
+file names. The 5 animations are run / jump / slide / move-left / move-right. Open
+`/assets/character/preview.html` to see every frame and the input→animation map.
+
+Choose the **file format** in `theme.js`:
+```js
+character: { format: 'svg' } // or 'png'
+```
+- `svg` (default) → frames load from `public/assets/character/svg/<frame>.svg`
+- `png`           → frames load from `public/assets/character/png/<frame>.png`
+
+The other format is tried automatically if a file is missing, so you can switch any
+time or even mix. To change frame counts/timing, edit `ANIM` in
+[`public/js/character.js`](public/js/character.js). Final fallback if a frame is
+absent: `assets/blobbie.svg` (or `assets/blobbie.png`).
 
 ## 7. Sounds & music
 

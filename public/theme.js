@@ -95,6 +95,18 @@ window.BlobbieTheme = {
   // Scrolling speed-lines on the road (motion feel). Set to null to hide them.
   speedLine: 'rgba(255,250,225,0.32)',
 
+  /* ---------------------------------------------------------- CHARACTER ----
+   * File format for the animated player frames in assets/character/.
+   *   'svg' -> loads assets/character/svg/<frame>.svg   (default)
+   *   'png' -> loads assets/character/png/<frame>.png
+   * The other format is tried automatically if a file is missing, so you can
+   * switch any time. (To swap the art itself, drop your files in the matching
+   * folder using the same frame names — see CUSTOMIZE.md.)
+   */
+  character: {
+    format: 'svg', // 'svg' or 'png'
+  },
+
   /* ------------------------------------------------------------ SPRITES ----
    * Replace the DRAWN coin / obstacles / player with your own images (PNG, JPG,
    * SVG or animated GIF). Leave a value null to keep the built-in drawn art.

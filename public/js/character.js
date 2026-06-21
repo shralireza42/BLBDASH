@@ -45,13 +45,20 @@
 
   const MANIFEST_URL = 'assets/character/manifest.json';
   const BASE = 'assets/character/';
-  const FALLBACK_SRC = 'assets/blobbie.svg'; // used when a frame SVG is missing
 
   const byName = Object.create(null); // name -> { meta, img, ok }
   let manifest = [];
   let ready = false;
   let loadPromise = null;
   let fallbackImg = null;
+
+  // Preferred character file format, chosen in theme.js: 'svg' (default) or 'png'.
+  // The other format is tried automatically as a fallback, so you can mix or
+  // switch any time.
+  function format() {
+    const f = (window.BlobbieTheme && window.BlobbieTheme.character && window.BlobbieTheme.character.format) || 'svg';
+    return String(f).toLowerCase() === 'png' ? 'png' : 'svg';
+  }
 
   function loadImage(src) {
     return new Promise((resolve) => {
@@ -62,9 +69,17 @@
     });
   }
 
+  // load the first image that exists from a list of candidate paths
+  async function loadFirst(paths) {
+    for (const p of paths) { if (!p) continue; const img = await loadImage(p); if (img) return img; }
+    return null;
+  }
+
   async function loadOne(meta) {
-    let img = meta.svg ? await loadImage(BASE + meta.svg) : null;
-    if (!img && meta.png) img = await loadImage(BASE + meta.png);
+    const svgPath = BASE + (meta.svg || ('svg/' + meta.name + '.svg'));
+    const pngPath = BASE + (meta.png || ('png/' + meta.name + '.png'));
+    const order = format() === 'png' ? [pngPath, svgPath] : [svgPath, pngPath];
+    const img = await loadFirst(order);
     byName[meta.name] = { meta, img, ok: !!img };
   }
 
@@ -77,8 +92,11 @@
       } catch (e) { manifest = []; }
       manifest.forEach((m) => { byName[m.name] = { meta: m, img: null, ok: false }; });
       ready = manifest.length > 0;
+      const fb = format() === 'png'
+        ? ['assets/blobbie.png', 'assets/blobbie.svg']
+        : ['assets/blobbie.svg', 'assets/blobbie.png'];
       const jobs = manifest.map(loadOne);
-      jobs.push(loadImage(FALLBACK_SRC).then((img) => { fallbackImg = img; }));
+      jobs.push(loadFirst(fb).then((img) => { fallbackImg = img; }));
       await Promise.all(jobs);
     })();
     return loadPromise;
