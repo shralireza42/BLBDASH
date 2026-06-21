@@ -14,6 +14,9 @@ Built to be **dropped into any website** as a single embeddable iframe.
 
 ## Features
 
+- 🎨 **One-file theming** — edit [`public/theme.js`](public/theme.js) to recolor the UI and
+  the whole game world, drop in texture images, or set an **animated GIF** as the gameplay
+  background. (See "Theming & custom assets" below.)
 - 🌳 **Fantastical nature world** — blue sky, a warm sun with soft rays, drifting clouds,
   snow-capped mountains, rolling green hills, and a winding earthy **path** lined with
   stylized trees and flowering vine archways. Obstacles are **nature props**: jump over
@@ -122,6 +125,31 @@ The result/menu art reuses frames via static **roles**: `avatar`/`idle` → `run
 
 Open **`/assets/character/preview.html`** to see every frame and the input → animation map.
 
+## Theming & custom assets 🎨
+
+Restyle the whole game from one file: [`public/theme.js`](public/theme.js). Edit the
+colors there and the **UI** (buttons / text / page background) and the **canvas world**
+(sky, ground, road/path, mountains, trees, coins, obstacles) update automatically — no other
+code to touch. Anything you omit falls back to the built-in default.
+
+**Texture images** — drop files in [`public/assets/textures/`](public/assets/textures/) and
+point to them in `theme.world.textures` (`sky`, `ground`, `road`):
+
+```js
+world: { textures: { sky: 'assets/textures/sky.png', ground: 'assets/textures/grass.png', road: 'assets/textures/road.png' } }
+```
+
+**Gameplay background image / animated GIF** — drop an image or **GIF** in
+[`public/assets/backgrounds/`](public/assets/backgrounds/) and set:
+
+```js
+gameplayBackground: 'assets/backgrounds/world.gif',
+gameplayBackgroundMode: 'cover', // or 'contain'
+```
+
+When set, your image/GIF becomes the world backdrop (menu + gameplay) and **animates**; the
+engine draws only the road/path + props on top so the runner keeps working.
+
 ## Project structure
 
 ```
@@ -130,22 +158,23 @@ server/
   db.js         SQLite: players, wallets, scores, tournaments, payouts
 public/
   index.html    Game shell (all screens)
+  theme.js      ⭐ Editable theme & assets (UI + world colors, textures, GIF backdrop)
   css/styles.css
   js/
-    shared.js     Deterministic PRNG + course generator (shared by both PvP clients & server)
-    character.js  Frame animation system: 5 animations + Animator (run/jump/slide/left/right)
-    blobbie.js    Character renderer: animation frame -> blobbie1.png sprite -> procedural fallback
-    game.js       Pseudo-3D neon-sea runner engine (canvas) — drives the Animator on input
-    audio.js      Synthesized Web Audio sound engine (SFX + looping music + mute)
-    background.js Animated neon-underwater background for the menu screens
-    net.js        REST + Socket.IO client wrapper
-    main.js       UI orchestration (screens, menus, matchmaking, results)
+    shared.js      Deterministic PRNG + course generator (shared by both PvP clients & server)
+    character.js   Frame animation system: 5 animations + Animator (run/jump/slide/left/right)
+    blobbie.js     Character renderer: animation frame -> blobbie.svg/png -> procedural fallback
+    underwater.js  Shared nature world renderer (sky/mountains/path/trees) — reads theme.js
+    game.js        Pseudo-3D runner engine (canvas) — drives the Animator; reads theme colors
+    audio.js       Synthesized Web Audio sound engine (SFX + looping music + mute)
+    background.js  Menu background driver (uses the shared world renderer)
+    net.js         REST + Socket.IO client wrapper
+    main.js        UI orchestration (screens, menus, matchmaking, results, theme apply)
   assets/
-    blobbie1.png            Mascot used for branding / fallback
-    character/
-      manifest.json         The 32 animation frames (your SVG art goes here)
-      svg/                  Placeholder SVG frames (replace by file name)
-      preview.html          Gallery of all frames + input → animation map
+    blobbie1.png / blobbie.svg   Mascot used for branding / fallback
+    character/      animation frames (your SVG art) + preview.html
+    textures/       drop sky/ground/road texture images here (see README)
+    backgrounds/    drop a gameplay background image or GIF here (see README)
   embed-example.html
 scripts/
   gen-character-placeholders.js   Regenerate manifest + placeholder SVGs (the 5 animations)
