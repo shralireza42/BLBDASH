@@ -446,6 +446,23 @@
 
     _neon(ctx, color, blur) { ctx.shadowColor = color; ctx.shadowBlur = blur; }
 
+    // resolve a custom obstacle sprite URL (variant overrides mechanic type)
+    _obstacleSprite(e, kind) {
+      const sp = (window.BlobbieTheme && window.BlobbieTheme.sprites && window.BlobbieTheme.sprites.obstacles) || {};
+      return sp[kind] || sp[e.type] || null;
+    }
+    // draw a sprite sized/anchored for its mechanic: jump=on ground low,
+    // slide=overhead, block=tall on ground.
+    _drawTypedSprite(ctx, img, type, x, y, s) {
+      let h, bottom;
+      if (type === 'jump') { h = 72 * s; bottom = y; }
+      else if (type === 'slide') { h = 64 * s; bottom = y - 96 * s; }
+      else { h = 150 * s; bottom = y; }
+      const ar = (img.naturalWidth / img.naturalHeight) || 1;
+      const w = h * ar;
+      ctx.drawImage(img, x - w / 2, bottom - h, w, h);
+    }
+
     _drawObstacle(ctx, e, z) {
       const p = this._project(z, S.LANE_OFFSETS[e.lane], 0);
       const s = p.scale;
@@ -460,6 +477,16 @@
       ctx.fillStyle = '#000';
       ctx.beginPath(); ctx.ellipse(x, y + 3 * s, 44 * s, 12 * s, 0, 0, 7); ctx.fill();
       ctx.restore();
+
+      // custom sprite replaces the drawn obstacle, if configured in theme.js
+      const spUrl = this._obstacleSprite(e, kind);
+      const spImg = spUrl && window.BlobbieAssets ? window.BlobbieAssets.get(spUrl) : null;
+      if (spImg) {
+        ctx.save(); ctx.globalAlpha = this._fog(z);
+        this._drawTypedSprite(ctx, spImg, e.type, x, y, s);
+        ctx.restore();
+        return;
+      }
 
       ctx.save();
       ctx.globalAlpha = this._fog(z); // fade in from the distance
@@ -545,6 +572,20 @@
         ctx.save(); ctx.globalAlpha = fog * 0.25; ctx.fillStyle = '#000';
         ctx.beginPath(); ctx.ellipse(g0.x, g0.y, 11 * p.scale, 4 * p.scale, 0, 0, 7); ctx.fill(); ctx.restore();
       }
+      // custom coin sprite replaces the drawn coin, if configured
+      const coinUrl = (window.BlobbieTheme && window.BlobbieTheme.sprites && window.BlobbieTheme.sprites.coin) || null;
+      const cimg = coinUrl && window.BlobbieAssets ? window.BlobbieAssets.get(coinUrl) : null;
+      if (cimg) {
+        const ch = 30 * p.scale, cw = ch * ((cimg.naturalWidth / cimg.naturalHeight) || 1);
+        ctx.save();
+        ctx.globalAlpha = fog;
+        ctx.translate(p.x, p.y);
+        ctx.scale(Math.max(0.15, sx), 1); // spin
+        ctx.drawImage(cimg, -cw / 2, -ch / 2, cw, ch);
+        ctx.restore();
+        return;
+      }
+
       const tc = TCOIN();
       ctx.save();
       ctx.globalAlpha = fog;

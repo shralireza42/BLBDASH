@@ -65,6 +65,24 @@
     ctx.fill();
     ctx.restore();
 
+    // 0) custom single player image (theme.sprites.player) overrides everything
+    const pUrl = window.BlobbieTheme && window.BlobbieTheme.sprites && window.BlobbieTheme.sprites.player;
+    const pImg = pUrl && window.BlobbieAssets ? window.BlobbieAssets.get(pUrl) : null;
+    if (pImg) {
+      const ph = size, pw = ph * ((pImg.naturalWidth / pImg.naturalHeight) || 1);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.drawImage(pImg, x - pw / 2, y - ph, pw, ph);
+      if (opts.tint) {
+        ctx.globalCompositeOperation = 'source-atop';
+        ctx.globalAlpha = alpha * 0.5; ctx.fillStyle = opts.tint;
+        ctx.fillRect(x - pw / 2, y - ph, pw, ph);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      ctx.restore();
+      return;
+    }
+
     // 1) preferred: the exact animation frame chosen by the Animator. The frame
     //    sequence is the animation itself, so we draw it straight (no procedural
     //    squash/stretch on top).

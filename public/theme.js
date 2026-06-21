@@ -92,8 +92,46 @@ window.BlobbieTheme = {
     boulder: '#9a9ca3',
   },
 
-  // Scrolling speed-lines on the road (motion feel)
+  // Scrolling speed-lines on the road (motion feel). Set to null to hide them.
   speedLine: 'rgba(255,250,225,0.32)',
+
+  /* ------------------------------------------------------------ SPRITES ----
+   * Replace the DRAWN coin / obstacles / player with your own images (PNG, JPG,
+   * SVG or animated GIF). Leave a value null to keep the built-in drawn art.
+   * Drop files in public/assets/sprites/ and use a path relative to /public.
+   *
+   * Sizing/placement is automatic: each image is scaled to a sensible height
+   * for its slot, keeping your image's aspect ratio, centered on the lane.
+   */
+  sprites: {
+    coin: null,   // e.g. 'assets/sprites/coin.png' (spins automatically)
+
+    // OBSTACLES. Easiest: set by what the player must DO:
+    obstacles: {
+      jump:  null, // something to JUMP OVER  (sits on the path, low)
+      slide: null, // something to SLIDE UNDER (hangs overhead)
+      block: null, // something to DODGE by switching lane (tall)
+      // Optional finer control — these OVERRIDE the type above per variant:
+      rock: null, log: null,      // (jump variants)
+      branch: null, arch: null,   // (slide variants)
+      tree: null, boulder: null,  // (block variants)
+    },
+
+    // Single image used for the player in ALL states (simple mode). For full
+    // animation, replace the SVG frames in assets/character/ instead (see
+    // CUSTOMIZE.md). Leave null to use the animation frames.
+    player: null, // e.g. 'assets/sprites/player.png'
+  },
+
+  /* ------------------------------------------------------------- SOUNDS ----
+   * Replace the built-in synthesized audio with your own files. Leave null to
+   * keep the synth. Drop files in public/assets/sounds/.
+   */
+  sounds: {
+    music: null,  // looping background track, e.g. 'assets/sounds/music.mp3'
+    jump: null, slide: null, lane: null, coin: null, crash: null,
+    win: null, lose: null, click: null, count: null, go: null,
+  },
 
   /* -------------------------------------------- GAMEPLAY BACKGROUND IMG ----
    * Set this to an image OR animated GIF to use as the world backdrop behind

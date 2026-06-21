@@ -148,7 +148,30 @@
     }
   }
 
+  // ---- custom sound/music files (theme.sounds) override the synth ----
+  const SF = () => (window.BlobbieTheme && window.BlobbieTheme.sounds) || {};
+  let musicEl = null;
+  function playFile(url) {
+    if (muted) return;
+    try { const a = new Audio(url); a.volume = 0.9; a.play().catch(() => {}); } catch (e) {}
+  }
+  // Public SFX: play a custom file if configured, else the synth voice.
+  function sfx(key) {
+    const f = SF()[key];
+    if (f) { playFile(f); return; }
+    const fn = SFX[key];
+    if (fn) fn();
+  }
+
   function startMusic() {
+    const url = SF().music;
+    if (url) {
+      if (!musicEl) { musicEl = new Audio(url); musicEl.loop = true; }
+      musicEl.volume = muted ? 0 : 0.5;
+      musicEl.play().catch(() => {});
+      musicOn = true;
+      return;
+    }
     if (!ensure() || musicOn) return;
     musicOn = true;
     step = 0;
@@ -157,6 +180,7 @@
   }
   function stopMusic() {
     musicOn = false;
+    if (musicEl) { try { musicEl.pause(); } catch (e) {} }
     if (schedTimer) { clearInterval(schedTimer); schedTimer = null; }
   }
 
@@ -164,6 +188,7 @@
     muted = m;
     try { localStorage.setItem('blobbieDash.muted', m ? '1' : '0'); } catch (e) {}
     if (master && ctx) master.gain.setTargetAtTime(m ? 0 : 0.9, ctx.currentTime, 0.02);
+    if (musicEl) musicEl.volume = m ? 0 : 0.5;
   }
   function toggleMuted() { setMuted(!muted); return muted; }
 
@@ -172,9 +197,9 @@
     isMuted() { return muted; },
     isMusicOn() { return musicOn; },
     sfx: SFX,
-    // convenience pass-throughs
-    jump: SFX.jump, slide: SFX.slide, lane: SFX.lane, coin: SFX.coin,
-    crash: SFX.crash, win: SFX.win, lose: SFX.lose, click: SFX.click,
-    count: SFX.count, go: SFX.go,
+    // convenience pass-throughs (custom file if set, else synth)
+    jump: () => sfx('jump'), slide: () => sfx('slide'), lane: () => sfx('lane'),
+    coin: () => sfx('coin'), crash: () => sfx('crash'), win: () => sfx('win'),
+    lose: () => sfx('lose'), click: () => sfx('click'), count: () => sfx('count'), go: () => sfx('go'),
   };
 })();
