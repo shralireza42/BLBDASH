@@ -8,6 +8,12 @@
   'use strict';
   const S = (typeof BlobbieShared !== 'undefined') ? BlobbieShared : require('./shared.js');
 
+  // editable theme colors (public/theme.js), with fallbacks
+  const TCOIN = () => (typeof window !== 'undefined' && window.BlobbieTheme && window.BlobbieTheme.coin) || {};
+  const TOBS = () => (typeof window !== 'undefined' && window.BlobbieTheme && window.BlobbieTheme.obstacles) || {};
+  const TLINE = () => (typeof window !== 'undefined' && window.BlobbieTheme && window.BlobbieTheme.speedLine) || 'rgba(255,250,225,0.32)';
+  const D = (v, d) => (v == null ? d : v);
+
   // perspective / projection tunables
   const FOCAL = 10;
   const VIEW = 72;          // how far ahead we render (world units)
@@ -418,7 +424,7 @@
     _drawSpeedLines(ctx) {
       if (this.frozen) return; // path is calm in the menu / during the countdown
       ctx.save();
-      ctx.strokeStyle = 'rgba(255,250,225,0.32)';
+      ctx.strokeStyle = TLINE();
       ctx.shadowColor = '#fff7d0'; ctx.shadowBlur = 6; ctx.lineWidth = 1.4;
       const dashStart = this.traveled % 3;
       for (let z = VIEW - dashStart; z > PLAYER_Z; z -= 3) {
@@ -446,6 +452,7 @@
       const kind = this._seaKind(e);
       const x = p.x, y = p.y;
       const ink = '#3a2a1a';
+      const to = TOBS();
 
       // soft contact shadow on the path (grounds the obstacle)
       ctx.save();
@@ -461,7 +468,7 @@
 
       if (kind === 'rock') {              // jump over: low mossy rock
         const w = 70 * s, h = 38 * s;
-        ctx.fillStyle = '#8d8f97';
+        ctx.fillStyle = D(to.rock, '#8d8f97');
         ctx.beginPath();
         ctx.moveTo(x - w / 2, y);
         ctx.lineTo(x - w * 0.32, y - h * 0.85);
@@ -469,50 +476,50 @@
         ctx.lineTo(x + w * 0.4, y - h * 0.7);
         ctx.lineTo(x + w / 2, y);
         ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#5fb85a'; // moss cap
+        ctx.fillStyle = D(to.moss, '#5fb85a'); // moss cap
         ctx.beginPath(); ctx.ellipse(x - w * 0.05, y - h * 0.9, w * 0.34, h * 0.28, 0, 0, 7); ctx.fill();
       } else if (kind === 'log') {        // jump over: fallen log
         const w = 78 * s, h = 30 * s;
-        ctx.fillStyle = '#9c6b3f';
+        ctx.fillStyle = D(to.log, '#9c6b3f');
         this._roundRect(ctx, x - w / 2, y - h, w, h, h * 0.5, true, true);
-        ctx.fillStyle = '#c79a63';
+        ctx.fillStyle = D(to.logEnd, '#c79a63');
         ctx.beginPath(); ctx.ellipse(x - w / 2 + h * 0.5, y - h * 0.5, h * 0.34, h * 0.42, 0, 0, 7); ctx.fill(); ctx.stroke();
-        ctx.strokeStyle = '#7a5230';
+        ctx.strokeStyle = D(to.branch, '#7a5230');
         ctx.beginPath(); ctx.arc(x - w / 2 + h * 0.5, y - h * 0.5, h * 0.18, 0, 7); ctx.stroke();
       } else if (kind === 'branch') {     // slide under: low leafy branch
         const top = y - 162 * s, w = 80 * s;
-        ctx.strokeStyle = '#7a5230'; ctx.lineWidth = Math.max(2, 6 * s);
+        ctx.strokeStyle = D(to.branch, '#7a5230'); ctx.lineWidth = Math.max(2, 6 * s);
         ctx.beginPath(); ctx.moveTo(x - w * 0.7, top); ctx.lineTo(x + w * 0.7, top); ctx.stroke();
-        ctx.fillStyle = '#3aa657';
+        ctx.fillStyle = D(to.leaf, '#3aa657');
         for (let i = -3; i <= 3; i++) {
           const lx = x + i * w * 0.2;
           ctx.beginPath(); ctx.ellipse(lx, top + 12 * s, 14 * s, 9 * s, 0.5, 0, 7); ctx.fill();
         }
       } else if (kind === 'arch') {       // slide under: flowering vine arch
         const top = y - 168 * s, w = 84 * s;
-        ctx.strokeStyle = '#2f8f48'; ctx.lineWidth = Math.max(2, 5 * s);
+        ctx.strokeStyle = D(to.vine, '#2f8f48'); ctx.lineWidth = Math.max(2, 5 * s);
         for (const sx of [-1, 1]) {
           ctx.beginPath(); ctx.moveTo(x + sx * w / 2, y);
           ctx.quadraticCurveTo(x + sx * w * 0.7, top + 40 * s, x, top);
           ctx.stroke();
         }
-        const cols = ['#ff9ed1', '#ffe27a', '#bfe0ff'];
+        const cols = (window.BlobbieTheme && window.BlobbieTheme.world && window.BlobbieTheme.world.blossom) || ['#ff9ed1', '#ffe27a', '#bfe0ff'];
         for (let i = 0; i < 6; i++) {
-          ctx.fillStyle = cols[i % 3];
+          ctx.fillStyle = cols[i % cols.length];
           ctx.beginPath(); ctx.arc(x - w * 0.4 + i * w * 0.16, top + 8 * s + Math.sin(i) * 6 * s, 5 * s, 0, 7); ctx.fill();
         }
       } else if (kind === 'tree') {       // dodge: tall tree
         const h = 140 * s, w = 26 * s;
-        ctx.fillStyle = '#7a5230';
+        ctx.fillStyle = D(to.treeTrunk, '#7a5230');
         ctx.fillRect(x - w / 2, y - h * 0.55, w, h * 0.55);
-        const greens = ['#2f8f48', '#3aa657', '#56c46a'];
+        const greens = D(to.treeCanopy, ['#2f8f48', '#3aa657', '#56c46a']);
         for (let i = 0; i < 3; i++) {
-          ctx.fillStyle = greens[i];
+          ctx.fillStyle = greens[i % greens.length];
           ctx.beginPath(); ctx.arc(x, y - h * (0.55 + i * 0.16), (46 - i * 8) * s, 0, 7); ctx.fill();
         }
       } else {                            // boulder: dodge, big mossy boulder
         const h = 120 * s, w = 92 * s;
-        ctx.fillStyle = '#9a9ca3';
+        ctx.fillStyle = D(to.boulder, '#9a9ca3');
         ctx.beginPath();
         ctx.moveTo(x - w / 2, y);
         ctx.lineTo(x - w * 0.42, y - h * 0.7);
@@ -520,7 +527,7 @@
         ctx.lineTo(x + w * 0.4, y - h * 0.72);
         ctx.lineTo(x + w / 2, y);
         ctx.closePath(); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = '#5fb85a';
+        ctx.fillStyle = D(to.moss, '#5fb85a');
         ctx.beginPath(); ctx.ellipse(x, y - h * 0.92, w * 0.36, h * 0.16, 0, 0, 7); ctx.fill();
       }
       ctx.restore();
@@ -538,21 +545,22 @@
         ctx.save(); ctx.globalAlpha = fog * 0.25; ctx.fillStyle = '#000';
         ctx.beginPath(); ctx.ellipse(g0.x, g0.y, 11 * p.scale, 4 * p.scale, 0, 0, 7); ctx.fill(); ctx.restore();
       }
+      const tc = TCOIN();
       ctx.save();
       ctx.globalAlpha = fog;
       ctx.translate(p.x, p.y);
       // warm golden glow halo
-      this._neon(ctx, '#ffcf4d', 16);
+      this._neon(ctx, D(tc.glow, '#ffcf4d'), 16);
       ctx.scale(sx, 1);
       const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.2, 0, 0, r);
-      g.addColorStop(0, '#fff6cf');
-      g.addColorStop(0.55, '#ffd23f');
-      g.addColorStop(1, '#e0951f');
+      g.addColorStop(0, D(tc.core, '#fff6cf'));
+      g.addColorStop(0.55, D(tc.mid, '#ffd23f'));
+      g.addColorStop(1, D(tc.edge, '#e0951f'));
       ctx.fillStyle = g;
-      ctx.strokeStyle = '#b9731a'; ctx.lineWidth = Math.max(1, 2 * p.scale);
+      ctx.strokeStyle = D(tc.rim, '#b9731a'); ctx.lineWidth = Math.max(1, 2 * p.scale);
       ctx.beginPath(); ctx.arc(0, 0, r, 0, 7); ctx.fill(); ctx.stroke();
       ctx.shadowBlur = 0;
-      ctx.fillStyle = '#7a4d10';
+      ctx.fillStyle = D(tc.text, '#7a4d10');
       ctx.font = 'bold ' + Math.max(8, 15 * p.scale) + 'px system-ui, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText('B', 0, 1);
