@@ -59,6 +59,14 @@ Set a custom port with `PORT=8080 npm start`.
 Player data, scores and tournaments are stored in a local SQLite database at
 `data/blobbie.db` (created automatically, git-ignored).
 
+## Deploying 🚀
+
+See **[DEPLOY.md](DEPLOY.md)** for step-by-step guides:
+- **Vercel** (static) — solo play + all customization run with no backend (a `vercel.json`
+  is included). The client auto-creates a local guest profile when there's no server.
+- **Render / Railway / Fly.io / VPS** (Node) — the full game including online ranked PvP,
+  4-player friend rooms, leaderboard and tournaments (needs a persistent WebSocket server).
+
 ---
 
 ## Embedding on your site
@@ -127,10 +135,23 @@ Open **`/assets/character/preview.html`** to see every frame and the input → a
 
 ## Theming & custom assets 🎨
 
-Restyle the whole game from one file: [`public/theme.js`](public/theme.js). Edit the
-colors there and the **UI** (buttons / text / page background) and the **canvas world**
+**Everything is replaceable from one file — [`public/theme.js`](public/theme.js).** Colors
+(UI + world), **coin/obstacle/player sprites**, **sounds & music**, textures, and an animated
+**GIF background**. See the full guide: **[CUSTOMIZE.md](CUSTOMIZE.md)**.
+
+Edit the colors and the **UI** (buttons / text / page background) and the **canvas world**
 (sky, ground, road/path, mountains, trees, coins, obstacles) update automatically — no other
 code to touch. Anything you omit falls back to the built-in default.
+
+Replace any drawn element with your own image/GIF, e.g.:
+```js
+sprites: {
+  coin: 'assets/sprites/coin.png',
+  obstacles: { jump: 'assets/sprites/jump.png', slide: 'assets/sprites/slide.png', block: 'assets/sprites/wall.png' },
+  player: 'assets/sprites/player.png',
+},
+sounds: { music: 'assets/sounds/music.mp3', coin: 'assets/sounds/coin.mp3' },
+```
 
 **Texture images** — drop files in [`public/assets/textures/`](public/assets/textures/) and
 point to them in `theme.world.textures` (`sky`, `ground`, `road`):
