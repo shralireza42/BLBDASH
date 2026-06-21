@@ -98,6 +98,16 @@
       document.body.classList.add('bg-image');
       if ((T.gameplayBackgroundMode || 'cover') === 'contain') document.body.classList.add('bg-contain');
     }
+
+    // preload any custom sprite images so they're ready by the time they appear
+    if (window.BlobbieAssets) {
+      const sp = T.sprites || {}, urls = [sp.coin, sp.player];
+      const obs = sp.obstacles || {};
+      Object.keys(obs).forEach((k) => urls.push(obs[k]));
+      const tx = (T.world && T.world.textures) || {};
+      ['sky', 'ground', 'road'].forEach((k) => urls.push(tx[k]));
+      window.BlobbieAssets.preload(urls.filter(Boolean));
+    }
   }
 
   async function init() {
@@ -173,6 +183,7 @@
   }
 
   async function startRanked() {
+    if (!Net.isOnline()) { toast('Online play needs the game server — solo works offline.'); return; }
     await refreshMe();
     if (state.player.balance < state.config.entryFee) {
       try {
@@ -196,6 +207,7 @@
   }
 
   function openFriendLobby() {
+    if (!Net.isOnline()) { toast('Online play needs the game server — solo works offline.'); return; }
     showScreen('lobby');
     $('lobbyTitle').textContent = 'Play with Friends';
     $('lobbyText').textContent = 'Up to 4 players. Create a room and share the code, or join one.';

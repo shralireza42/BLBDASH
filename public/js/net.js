@@ -3,12 +3,27 @@
   'use strict';
 
   const STORE_KEY = 'blobbieDash.identity';
+  const LOCAL_KEY = 'blobbieDash.localPlayer';
 
   const Net = {
     id: null,
     token: null,
     socket: null,
     _handlers: {},
+
+    // Is the realtime/REST backend reachable? (false on a static-only deploy.)
+    isOnline() { return !!(this.socket && this.socket.connected); },
+
+    _defaultConfig() { return { startingBalance: 1000, entryFee: 50, rake: 0.1, coinValue: 5 }; },
+    _makeLocal(username) {
+      const name = (String(username || 'Blobbie').trim().slice(0, 18).replace(/[^\w \-]/g, '') || 'Blobbie');
+      const id = 'local-' + Math.random().toString(16).slice(2, 12);
+      const token = Math.random().toString(16).slice(2);
+      const player = { id, username: name, balance: 1000, games: 0, wins: 0, bestScore: 0, weeklyRank: null, local: true };
+      try { localStorage.setItem(LOCAL_KEY, JSON.stringify(player)); } catch (e) {}
+      return { id, token, player };
+    },
+    _localPlayer() { try { return JSON.parse(localStorage.getItem(LOCAL_KEY)); } catch (e) { return null; } },
 
     loadIdentity() {
       try {
@@ -44,19 +59,31 @@
       return res.json();
     },
 
-    getConfig() { return this._fetch('/api/config'); },
+    // All REST calls degrade gracefully so the SOLO game + customization work
+    // even with no backend (e.g. a static deploy on Vercel).
+    getConfig() { return this._fetch('/api/config').catch(() => this._defaultConfig()); },
     register(username) {
-      return this._fetch('/api/register', { method: 'POST', body: JSON.stringify({ username }) });
+      return this._fetch('/api/register', { method: 'POST', body: JSON.stringify({ username }) })
+        .catch(() => this._makeLocal(username));
     },
-    me() { return this._fetch('/api/me'); },
-    claimBonus() { return this._fetch('/api/claim-bonus', { method: 'POST', body: '{}' }); },
-    leaderboard(scope) { return this._fetch('/api/leaderboard?scope=' + (scope || 'all')); },
-    tournament() { return this._fetch('/api/tournament'); },
+    me() {
+      return this._fetch('/api/me').catch(() => {
+        const p = this._localPlayer();
+        if (p) return { player: p };
+        throw new Error('offline-no-local');
+      });
+    },
+    claimBonus() { return this._fetch('/api/claim-bonus', { method: 'POST', body: '{}' }).catch(() => ({ player: this._localPlayer() })); },
+    leaderboard(scope) { return this._fetch('/api/leaderboard?scope=' + (scope || 'all')).catch(() => ({ scope: scope || 'all', entries: [] })); },
+    tournament() { return this._fetch('/api/tournament').catch(() => ({ week: '—', pool: 0, endsAt: Date.now(), prizeSplit: [], standings: [], recentlySettled: [] })); },
 
     // ---- socket ----
     connect() {
       if (this.socket) return;
-      this.socket = io({ transports: ['websocket', 'polling'] });
+      if (typeof io === 'undefined') return; // no realtime server (static host)
+      try {
+        this.socket = io({ transports: ['websocket', 'polling'], reconnectionAttempts: 3, timeout: 5000 });
+      } catch (e) { return; }
       const events = [
         'auth:ok', 'auth:error', 'queue:waiting', 'queue:error', 'queue:left',
         'room:created', 'room:update', 'room:left', 'room:error',
