@@ -56,6 +56,9 @@ sees the outside scene through it. Colors live in `world.tunnel`:
 | `rib` | the tube rings / ribs |
 | `gloss` | the moving liquid-glass highlights |
 | `rim` | glowing line where the glass wall meets the floor |
+| `blur` | **frosted glass** — blur (px) of the world seen *through* the tunnel (0 = clear) |
+| `texture` | optional image laid over the glass, e.g. `'assets/textures/glass.png'` |
+| `textureAlpha` | opacity of that glass texture (0–1) |
 
 ```js
 world: { tunnel: { glass: 'rgba(255,150,90,0.12)', rib: 'rgba(255,200,150,0.5)', rim: '#ffcf8a' } }
@@ -168,12 +171,16 @@ gameplayBackgroundMode: 'cover', // or 'contain'
 Set how close the camera sits to Blobbie in `theme.js`:
 
 ```js
-camera: { zoom: 1.25 } // 1 = default, higher = closer, lower = pulled back (~0.8–2.2)
+camera: {
+  zoom: 1.25,    // 1 = default, higher = closer, lower = pulled back (~0.8–2.2)
+  horizon: 0.30, // camera ANGLE: where the horizon sits (fraction of height).
+                 // LOWER = look more DOWN (more floor / top-down), HIGHER = flatter. (~0.15–0.55)
+}
 ```
 
-It scales the whole scene around Blobbie's feet (he stays anchored at the bottom),
-so a higher value makes Blobbie and obstacles look bigger/closer. It's purely
-visual — gameplay and collisions are unchanged.
+`zoom` scales the scene around Blobbie's feet (he stays anchored at the bottom).
+`horizon` tilts the camera: lower values push the horizon up so you see more of the
+floor (a more downward angle). Both are purely visual — gameplay is unchanged.
 
 ## 10. Speed lines & effects
 

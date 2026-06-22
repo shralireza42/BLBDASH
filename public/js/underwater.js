@@ -17,12 +17,18 @@
   const FOCAL = 10, VIEW = 72, PLAYER_Z = 0.6, LANE_EDGE = 1.55;
   const W_ = () => (window.BlobbieTheme && window.BlobbieTheme.world) || {};
   const def = (v, d) => (v == null ? d : v);
+  const camH = () => {
+    const v = window.BlobbieTheme && window.BlobbieTheme.camera && window.BlobbieTheme.camera.horizon;
+    return Math.max(0.15, Math.min(0.55, (typeof v === 'number' && isFinite(v)) ? v : 0.30));
+  };
 
   class BlobbieDashUnderwaterBackground {
     constructor() {
       this.W = 0; this.H = 0; this.dpr = 1;
       this.staticCanvas = (typeof document !== 'undefined') ? document.createElement('canvas') : null;
       this.sctx = this.staticCanvas ? this.staticCanvas.getContext('2d') : null;
+      this.tunnelCanvas = (typeof document !== 'undefined') ? document.createElement('canvas') : null;
+      this.tctx = this.tunnelCanvas ? this.tunnelCanvas.getContext('2d') : null;
       this.fliers = []; this.pollen = []; this.motes = [];
       this.time = 0; this._built = false;
       this._tex = {}; // loaded texture images
@@ -50,7 +56,7 @@
       this.imageBg = !!(window.BlobbieTheme && window.BlobbieTheme.gameplayBackground);
       if (this._built && this.W === W && this.H === H && this.dpr === dpr) return;
       this.W = W; this.H = H; this.dpr = dpr;
-      this.horizonY = H * 0.40;
+      this.horizonY = H * camH();
       this.groundY = H * 0.97;
       this.centerX = W / 2;
       this.spread = W * 0.27;
@@ -59,21 +65,37 @@
       this.roadNearR = this.project(PLAYER_Z, LANE_EDGE, 0);
       this.roadFarR = this.project(VIEW, LANE_EDGE, 0);
       this._buildStatic();
+      this._buildTunnel();
       this._seed();
       this._loadTextures();
       this._built = true;
     }
 
+    _rebuild() { this._buildStatic(); this._buildTunnel(); }
+
+    _buildTunnel() {
+      const c = this.tunnelCanvas, ctx = this.tctx;
+      if (!c) return;
+      c.width = Math.round(this.W * this.dpr);
+      c.height = Math.round(this.H * this.dpr);
+      ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+      ctx.clearRect(0, 0, this.W, this.H);
+      this._drawPath(ctx); // floor + glass + ribs onto the (transparent) tunnel layer
+    }
+
     _loadTextures() {
       const tx = W_().textures || {};
-      ['sky', 'ground', 'road'].forEach((k) => {
-        if (tx[k] && (!this._tex[k] || this._tex[k]._src !== tx[k])) {
+      const tnl = W_().tunnel || {};
+      const map = { sky: tx.sky, ground: tx.ground, road: tx.road, tunnel: tnl.texture };
+      Object.keys(map).forEach((k) => {
+        const url = map[k];
+        if (url && (!this._tex[k] || this._tex[k]._src !== url)) {
           const img = new Image();
-          img._src = tx[k];
-          img.onload = () => { this._tex[k] = img; this._buildStatic(); };
+          img._src = url;
+          img.onload = () => { this._tex[k] = img; this._rebuild(); };
           img.onerror = () => {};
-          img.src = tx[k];
-        } else if (!tx[k]) { delete this._tex[k]; }
+          img.src = url;
+        } else if (!url) { delete this._tex[k]; }
       });
     }
 
@@ -147,7 +169,7 @@
       }
 
       this._drawTrees(ctx);
-      this._drawPath(ctx);
+      // (the glass tunnel is built separately into tunnelCanvas via _buildTunnel)
     }
 
     _drawClouds(ctx) {
@@ -258,14 +280,6 @@
       const tnl = w.tunnel || {};
       const nL = this.roadNearL, nR = this.roadNearR, fL = this.roadFarL, fR = this.roadFarR;
 
-      // ground just outside the tunnel (skip in image mode so backdrop shows)
-      if (!this.imageBg) {
-        ctx.save(); ctx.fillStyle = def(w.pathBorder, '#3f9a46');
-        const eL = this.project(PLAYER_Z, -LANE_EDGE - 0.22, 0), eFL = this.project(VIEW, -LANE_EDGE - 0.22, 0);
-        const eR = this.project(PLAYER_Z, LANE_EDGE + 0.22, 0), eFR = this.project(VIEW, LANE_EDGE + 0.22, 0);
-        this._roundedTrap(ctx, eL, eR, eFL, eFR); ctx.fill(); ctx.restore();
-      }
-
       // ---- FLOOR (running surface) — drawn first so it stays clean ----
       const pathC = def(w.path, ['#cda978', '#dcbe8c', '#e9d2a4']);
       const path = ctx.createLinearGradient(0, this.horizonY, 0, this.H);
@@ -294,6 +308,18 @@
       ctx.fillStyle = body;
       ctx.fillRect(0, top, this.W, near.ry + 4);
       ctx.restore();
+
+      // ---- optional GLASS TEXTURE overlay (clipped to the arch) ----
+      if (this._tex.tunnel) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(near.cx, near.baseY, near.rx, near.ry, 0, Math.PI, 2 * Math.PI); ctx.closePath();
+        ctx.clip();
+        ctx.globalAlpha = (typeof tnl.textureAlpha === 'number') ? tnl.textureAlpha : 0.5;
+        this._cover(ctx, this._tex.tunnel, near.cx - near.rx, near.baseY - near.ry, near.rx * 2, near.ry);
+        ctx.restore();
+        ctx.globalAlpha = 1;
+      }
 
       // ---- TUBE RIBS (top arches receding to the vanishing point) ----
       ctx.save(); ctx.lineCap = 'round';
@@ -410,11 +436,28 @@
     draw(ctx) {
       if (!this._built) return;
       if (this.imageBg) ctx.clearRect(0, 0, this.W, this.H); // let the GIF/image show behind
-      ctx.drawImage(this.staticCanvas, 0, 0, this.W, this.H);
-      this._drawFliers(ctx);
-      this._drawLiquid(ctx);     // flowing liquid-glass highlights on the tunnel
-      this._drawSunDapples(ctx); // light on the floor
+      ctx.drawImage(this.staticCanvas, 0, 0, this.W, this.H); // OUTSIDE world
+      this._drawFliers(ctx);     // birds + butterflies (outside, behind glass)
       this._drawPollen(ctx);
+
+      // frosted glass: blur the world seen THROUGH the tunnel (editable)
+      const tnl = W_().tunnel || {};
+      const blur = (typeof tnl.blur === 'number') ? tnl.blur : 0;
+      if (blur > 0 && !this.imageBg && this.staticCanvas) {
+        const near = this._ringAt(PLAYER_Z);
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(near.cx, near.baseY, near.rx, near.ry, 0, Math.PI, 2 * Math.PI); ctx.closePath();
+        ctx.clip();
+        ctx.filter = 'blur(' + Math.min(24, blur) + 'px)';
+        ctx.drawImage(this.staticCanvas, 0, 0, this.W, this.H);
+        ctx.filter = 'none';
+        ctx.restore();
+      }
+
+      ctx.drawImage(this.tunnelCanvas, 0, 0, this.W, this.H); // glass tunnel + floor + ribs
+      this._drawLiquid(ctx);     // flowing liquid-glass highlights
+      this._drawSunDapples(ctx); // light on the floor
       this._drawFireflies(ctx);
       this._drawSparkle(ctx);
       if (!this.imageBg) this._drawVignette(ctx);

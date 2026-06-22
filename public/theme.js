@@ -63,6 +63,9 @@ window.BlobbieTheme = {
       rib:    'rgba(190, 245, 255, 0.55)', // the tube "ribs" (glass rings)
       gloss:  'rgba(255, 255, 255, 0.6)',  // moving glass highlights / shine
       rim:    '#9fe9ff',                    // neon wall-base line along the floor edges
+      blur:   0,    // frosted glass: blur (px) of the world seen THROUGH the tunnel (0 = clear)
+      texture: null, // optional image laid over the glass, e.g. 'assets/textures/glass.png'
+      textureAlpha: 0.5,
     },
     laneLine:      'rgba(120,90,50,0.35)', // lane divider color
     archVine:      '#2f8f48',  // overhead vine archway color
@@ -110,7 +113,11 @@ window.BlobbieTheme = {
    * (Blobbie and obstacles look bigger), lower = pulled back. Range ~0.8–2.2.
    */
   camera: {
-    zoom: 1.25,
+    zoom: 1.25,    // closeness to Blobbie (1 = default, higher = closer)
+    // Camera angle / tilt: where the horizon sits (fraction of screen height).
+    // LOWER = camera looks more DOWN (more floor / top-down), HIGHER = flatter.
+    // Range ~0.15–0.55.
+    horizon: 0.30,
   },
 
   /* ---------------------------------------------------------- CHARACTER ----

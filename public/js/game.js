@@ -93,7 +93,7 @@
       this.canvas.height = Math.round(h * dpr);
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       this.W = w; this.H = h;
-      this.horizonY = h * 0.40; // matches the shared world background's horizon
+      this.horizonY = h * this._camHorizon(); // matches the shared world background
       this.groundY = h * 0.97;
       this.centerX = w / 2;
       this.spread = w * 0.27;
@@ -390,6 +390,10 @@
       const z = window.BlobbieTheme && window.BlobbieTheme.camera && window.BlobbieTheme.camera.zoom;
       const v = (typeof z === 'number' && isFinite(z)) ? z : 1.25;
       return Math.max(0.8, Math.min(2.2, v));
+    }
+    _camHorizon() {
+      const v = window.BlobbieTheme && window.BlobbieTheme.camera && window.BlobbieTheme.camera.horizon;
+      return Math.max(0.15, Math.min(0.55, (typeof v === 'number' && isFinite(v)) ? v : 0.30));
     }
 
     // ---- rendering ----
