@@ -3,6 +3,11 @@
 Drop your own audio here (MP3/OGG/WAV) and reference them in `public/theme.js`
 under `sounds`. Leave a value `null` to keep the built-in synthesized sound.
 
+By default `music` points to `music.mp3` and `footstep` to `footstep.mp3` in this
+folder. If a file is missing the game automatically falls back to the built-in
+synthesized sound (it only tries each missing file once), so audio always works —
+just drop your files in to use them.
+
 ```js
 sounds: {
   music: 'assets/sounds/music.mp3', // looping background track

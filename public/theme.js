@@ -74,7 +74,7 @@ window.BlobbieTheme = {
       rim:    '#9fe9ff',                    // neon wall-base line along the floor edges
       height: 1.6,  // tunnel HEIGHT (taller arch). 1 = low, higher = taller.
       width:  1.0,  // tunnel WIDTH (relative to the road). >1 = wider than the road.
-      texture: null, // image tiled across the WHOLE tunnel glass, e.g. 'assets/textures/glass.png'
+      texture: 'assets/textures/glass.png', // image tiled across the WHOLE tunnel glass (none if missing)
       textureAlpha: 0.5,
     },
     laneLine:      'rgba(120,90,50,0.35)', // lane divider color
@@ -139,7 +139,7 @@ window.BlobbieTheme = {
    * folder using the same frame names — see CUSTOMIZE.md.)
    */
   character: {
-    format: 'svg', // 'svg' or 'png'
+    format: 'png', // 'svg' or 'png'
   },
 
   /* ------------------------------------------------------------ SPRITES ----
@@ -155,9 +155,9 @@ window.BlobbieTheme = {
 
     // OBSTACLES. Easiest: set by what the player must DO:
     obstacles: {
-      jump:  null, // something to JUMP OVER  (sits on the path, low)
-      slide: null, // something to SLIDE UNDER (hangs overhead)
-      block: null, // something to DODGE by switching lane (tall)
+      jump:  'assets/sprites/jump.png',  // something to JUMP OVER  (sits on the path, low)
+      slide: 'assets/sprites/slide.png', // something to SLIDE UNDER (hangs overhead)
+      block: 'assets/sprites/block.png', // something to DODGE by switching lane (tall)
       // Optional finer control — these OVERRIDE the type above per variant:
       rock: null, log: null,      // (jump variants)
       branch: null, arch: null,   // (slide variants)
@@ -175,10 +175,10 @@ window.BlobbieTheme = {
    * keep the synth. Drop files in public/assets/sounds/.
    */
   sounds: {
-    music: null,  // looping background track, e.g. 'assets/sounds/music.mp3'
+    music: 'assets/sounds/music.mp3',  // looping background track (falls back to synth if missing)
     jump: null, slide: null, lane: null, coin: null, crash: null,
     win: null, lose: null, click: null, count: null, go: null,
-    footstep: null, // plays repeatedly while running, e.g. 'assets/sounds/footstep.mp3'
+    footstep: 'assets/sounds/footstep.mp3', // plays repeatedly while running (synth if missing)
     fence: null,    // plays when you bump a side fence
   },
 
@@ -188,6 +188,6 @@ window.BlobbieTheme = {
    * the road/path + props on top of your image, so the runner still works.
    * Example: gameplayBackground: 'assets/backgrounds/world.gif',
    */
-  gameplayBackground: null,
+  gameplayBackground: 'assets/backgrounds/world.gif', // image/GIF backdrop (falls back to the drawn scene if missing)
   gameplayBackgroundMode: 'cover', // 'cover' (fill) or 'contain' (letterbox)
 };

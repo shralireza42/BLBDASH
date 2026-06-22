@@ -103,6 +103,12 @@
     if (T.gameplayBackground) {
       const img = $('worldBgImg');
       if (img) {
+        // if the configured backdrop is missing, fall back to the drawn scene
+        img.onerror = () => {
+          T.gameplayBackground = null;
+          document.body.classList.remove('bg-image', 'bg-contain');
+          if (window.Background && window.Background.refresh) window.Background.refresh();
+        };
         img.src = T.gameplayBackground;
         const bb = (T.world && typeof T.world.backgroundBlur === 'number') ? T.world.backgroundBlur : 0;
         img.style.filter = bb > 0 ? ('blur(' + Math.min(24, bb) + 'px)') : 'none';

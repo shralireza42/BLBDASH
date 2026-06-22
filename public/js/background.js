@@ -31,6 +31,9 @@
     raf = requestAnimationFrame(frame);
   }
   function stop() { running = false; if (raf) cancelAnimationFrame(raf); }
+  // force a rebuild of the scene (e.g. after the GIF backdrop fails to load and
+  // we revert to the drawn scene, so imageBg mode is re-evaluated).
+  function refresh() { if (bg) { bg._built = false; fit(); } }
 
   function init() {
     canvas = document.getElementById('bgfx');
@@ -41,7 +44,7 @@
     start();
   }
 
-  window.Background = { init, start, stop, setActive(on) { on ? start() : stop(); } };
+  window.Background = { init, start, stop, refresh, setActive(on) { on ? start() : stop(); } };
   if (document.readyState !== 'loading') init();
   else window.addEventListener('DOMContentLoaded', init);
 })();

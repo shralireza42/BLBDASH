@@ -153,34 +153,54 @@
   }
 
   // ---- custom sound/music files (theme.sounds) override the synth ----
+  // If a configured file is missing/unplayable, we fall back to the built-in
+  // synth and remember it's missing (so we don't retry / spam 404s).
   const SF = () => (window.BlobbieTheme && window.BlobbieTheme.sounds) || {};
+  const missingAudio = Object.create(null);
   let musicEl = null;
-  function playFile(url) {
+
+  function playFile(url, fallback) {
     if (muted) return;
-    try { const a = new Audio(url); a.volume = 0.9; a.play().catch(() => {}); } catch (e) {}
-  }
-  // Public SFX: play a custom file if configured, else the synth voice.
-  function sfx(key) {
-    const f = SF()[key];
-    if (f) { playFile(f); return; }
-    const fn = SFX[key];
-    if (fn) fn();
+    try {
+      const a = new Audio(url);
+      a.volume = 0.9;
+      let done = false;
+      const fb = () => { if (done) return; done = true; missingAudio[url] = true; if (fallback) fallback(); };
+      a.addEventListener('error', fb);
+      const pr = a.play();
+      if (pr && pr.catch) pr.catch(fb);
+    } catch (e) { missingAudio[url] = true; if (fallback) fallback(); }
   }
 
-  function startMusic() {
-    const url = SF().music;
-    if (url) {
-      if (!musicEl) { musicEl = new Audio(url); musicEl.loop = true; }
-      musicEl.volume = muted ? 0 : 0.5;
-      musicEl.play().catch(() => {});
-      musicOn = true;
-      return;
-    }
-    if (!ensure() || musicOn) return;
+  // Public SFX: play a custom file if present, else the synth voice.
+  function sfx(key) {
+    const f = SF()[key];
+    const synth = () => { if (SFX[key]) SFX[key](); };
+    if (f && !missingAudio[f]) { playFile(f, synth); return; }
+    synth();
+  }
+
+  function startSynthMusic() {
+    if (!ensure() || schedTimer) return;
     musicOn = true;
     step = 0;
     nextNoteTime = ctx.currentTime + 0.1;
     schedTimer = setInterval(scheduler, 50);
+  }
+  function startMusic() {
+    const url = SF().music;
+    if (url && !missingAudio[url]) {
+      if (!musicEl) {
+        musicEl = new Audio(url); musicEl.loop = true;
+        musicEl.addEventListener('error', () => { missingAudio[url] = true; musicEl = null; startSynthMusic(); });
+      }
+      musicEl.volume = muted ? 0 : 0.5;
+      const pr = musicEl.play();
+      if (pr && pr.catch) pr.catch(() => { missingAudio[url] = true; musicEl = null; startSynthMusic(); });
+      musicOn = true;
+      return;
+    }
+    startSynthMusic();
   }
   function stopMusic() {
     musicOn = false;

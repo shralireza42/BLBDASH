@@ -13,6 +13,10 @@ world: {
 }
 ```
 
+The glass **tunnel** texture is configured separately under `world.tunnel.texture`
+(default `assets/textures/glass.png`). It is tiled across the whole tunnel glass.
+
 - PNG or JPG both work (PNG if you need transparency).
 - Any size; images are scaled to fill their area (cover).
 - Leave a value `null` in the theme to keep the painted color instead.
+- If a texture file is missing the game keeps the painted look (no texture).

@@ -4,6 +4,10 @@ Drop your own images here (PNG, JPG, SVG or **animated GIF**) and reference them
 in `public/theme.js` under `sprites`. Leave a value `null` to keep the built-in
 drawn art.
 
+By default the obstacle slots point to `jump.png`, `slide.png` and `block.png` in
+this folder. If a file is missing the game automatically falls back to the
+built-in drawn obstacle, so it always works — just drop your files in to use them.
+
 ```js
 sprites: {
   coin: 'assets/sprites/coin.png',     // spins automatically

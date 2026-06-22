@@ -55,15 +55,7 @@
     const t = opts.time || 0;
     const alpha = opts.alpha == null ? 1 : opts.alpha;
 
-    // ground shadow (shared by every render path)
-    const shadowSquash = opts.state === 'slide' ? 0.5 : 0.42;
-    ctx.save();
-    ctx.globalAlpha = alpha * 0.28;
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.ellipse(x, y + size * 0.02, size * shadowSquash, size * 0.12, 0, 0, 7);
-    ctx.fill();
-    ctx.restore();
+    // (under-player shadow removed)
 
     // 0) custom single player image (theme.sprites.player) overrides everything
     const pUrl = window.BlobbieTheme && window.BlobbieTheme.sprites && window.BlobbieTheme.sprites.player;

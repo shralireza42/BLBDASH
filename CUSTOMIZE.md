@@ -4,6 +4,13 @@
 Edit it, refresh the page — done. No build step. Anything you leave `null` keeps the
 built-in default, so you can change one thing at a time.
 
+Out of the box the theme already points the obstacle sprites, music, footsteps,
+tunnel glass texture and gameplay background at bundled asset paths (e.g.
+`assets/sprites/jump.png`, `assets/sounds/music.mp3`, `assets/backgrounds/world.gif`).
+**You don't have to provide those files** — if any are missing the game falls back
+to the drawn art / synth sound automatically. Drop your own files at those paths to
+use them.
+
 Put your media in these folders (paths in `theme.js` are relative to `/public`):
 
 | Folder | For |
@@ -150,10 +157,12 @@ file names. The 5 animations are run / jump / slide / move-left / move-right. Op
 
 Choose the **file format** in `theme.js`:
 ```js
-character: { format: 'svg' } // or 'png'
+character: { format: 'png' } // or 'svg'
 ```
-- `svg` (default) → frames load from `public/assets/character/svg/<frame>.svg`
-- `png`           → frames load from `public/assets/character/png/<frame>.png`
+- `png` (default) → frames load from `public/assets/character/png/<frame>.png`
+- `svg`           → frames load from `public/assets/character/svg/<frame>.svg`
+- If a frame is missing in the chosen format the game automatically tries the
+  other format, then falls back to `blobbie.svg`.
 
 The other format is tried automatically if a file is missing, so you can switch any
 time or even mix. To change frame counts/timing, edit `ANIM` in

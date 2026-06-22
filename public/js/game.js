@@ -717,8 +717,10 @@
         ? window.Character.frameAtTime('run', this.time) : null);
       const color = o.color || '#39ff9e';
 
+      // no tint overlay (avoids a colored box around opaque rival sprites);
+      // rivals are shown translucent + distinguished by their coloured label.
       window.Blobbie.draw(ctx, p.x, p.y, size, {
-        frame, state: 'run', time: this.time, alpha: 0.72, tint: color,
+        frame, state: 'run', time: this.time, alpha: 0.72,
       });
 
       const gap = Math.round(rel);
