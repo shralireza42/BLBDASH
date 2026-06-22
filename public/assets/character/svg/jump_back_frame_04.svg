@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="360" viewBox="0 0 220 360">
+  <g transform="rotate(-2.85 110 280.8)">
+    <!-- legs -->
+    <rect x="60.5" y="280.8" width="28.6" height="57.6" rx="14.3" fill="#7b4dff" stroke="#1d1d28" stroke-width="3"/>
+    <rect x="130.89999999999998" y="280.8" width="28.6" height="57.6" rx="14.3" fill="#7b4dff" stroke="#1d1d28" stroke-width="3"/>
+    <!-- body (back view: no face) -->
+    <rect x="55" y="57.6" width="110" height="223.2" rx="49.5" fill="#7b4dff" stroke="#1d1d28" stroke-width="3"/>
+    <ellipse cx="110" cy="97.776" rx="33" ry="26.784" fill="#ffffff" fill-opacity="0.18"/>
+  </g>
+  <text x="110" y="180" font-family="system-ui, sans-serif" font-weight="900"
+        font-size="74.80000000000001" fill="#1d1d28" fill-opacity="0.22" text-anchor="middle" dominant-baseline="middle">4</text>
+  <text x="110" y="352" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="13" fill="#7b4dff" text-anchor="middle">jump_back 04</text>
+</svg>

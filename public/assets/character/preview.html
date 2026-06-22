@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blobbie Dash — Character Assets</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #160b2e; color: #f3eefc; padding: 22px; }
+    h1 { font-weight: 800; margin: 0 0 4px; }
+    p { color: #b9a9d8; line-height: 1.6; }
+    code { background: #00000055; padding: 2px 6px; border-radius: 6px; color: #ffd23f; }
+    .legend { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 14px; padding: 14px 18px; margin: 16px 0 24px; }
+    .legend table { border-collapse: collapse; width: 100%; max-width: 520px; }
+    .legend td { padding: 4px 8px; border-bottom: 1px dashed rgba(255,255,255,.12); font-size: 14px; }
+    .legend td:first-child { color: #39d98a; font-weight: 700; width: 90px; }
+    h2 { margin: 24px 0 10px; text-transform: capitalize; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; }
+    .cell { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px; text-align: center; }
+    .cell .imgbox { height: 150px; display: flex; align-items: center; justify-content: center;
+      background-image: linear-gradient(45deg,#ffffff14 25%,transparent 25%),linear-gradient(-45deg,#ffffff14 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ffffff14 75%),linear-gradient(-45deg,transparent 75%,#ffffff14 75%);
+      background-size: 16px 16px; background-position: 0 0,0 8px,8px -8px,-8px 0; border-radius: 8px; }
+    .cell img { max-width: 100%; max-height: 150px; }
+    .cell .name { font-weight: 700; font-size: 13px; margin-top: 8px; }
+    .cell .size { font-size: 11px; color: #b9a9d8; }
+    .role { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 800; color: #160b2e; background: #ffd23f; padding: 2px 8px; border-radius: 999px; }
+  </style>
+</head>
+<body>
+  <h1>Blobbie Dash — Character Assets</h1>
+  <p>These are the pieces from <code>manifest.json</code> (SVG only). Replace any file in
+     <code>svg/</code> with your own SVG export of the same name. To change which piece is
+     used for which game state, edit <code>ROLES</code> in <code>public/js/character.js</code>.
+     For a real run animation, add frame files (e.g. <code>run_01.svg</code>, <code>run_02.svg</code>)
+     and set <code>run</code> to an array of their names.</p>
+
+  <div class="legend">
+    <strong>Animations (input → frames, ping-pong one-shot except run)</strong>
+    <table id="animLegend"></table>
+    <strong style="display:block;margin-top:12px">Static roles (menu / result art)</strong>
+    <table id="roleLegend"></table>
+  </div>
+
+  <div id="groups"></div>
+
+  <script>
+    // Keep in sync with ANIM/ROLES in public/js/character.js
+    const ANIM = {
+      'run (default, loops)': 'run_back_frame_01..08',
+      'jump (UP key)': 'jump_back_frame_01..06',
+      'slide (DOWN key)': 'jump_slide_sit_mix_back_frame_01..06',
+      'move left (LEFT key)': 'move_left_back_frame_01..06',
+      'move right (RIGHT key)': 'move_right_back_frame_01..06',
+    };
+    const ROLES = {
+      idle: 'run_back_frame_01', avatar: 'run_back_frame_01',
+      win: 'jump_back_frame_06', lose: 'jump_slide_sit_mix_back_frame_06',
+    };
+    const roleByAsset = {};
+    Object.keys(ROLES).forEach((r) => { (roleByAsset[ROLES[r]] = roleByAsset[ROLES[r]] || []).push(r); });
+
+    const al = document.getElementById('animLegend');
+    Object.keys(ANIM).forEach((r) => { al.insertAdjacentHTML('beforeend', '<tr><td>' + r + '</td><td>' + ANIM[r] + '</td></tr>'); });
+    const rl = document.getElementById('roleLegend');
+    Object.keys(ROLES).forEach((r) => { rl.insertAdjacentHTML('beforeend', '<tr><td>' + r + '</td><td>' + ROLES[r] + '</td></tr>'); });
+
+    fetch('manifest.json').then((r) => r.json()).then((items) => {
+      const groups = {};
+      items.forEach((it) => { (groups[it.group] = groups[it.group] || []).push(it); });
+      const root = document.getElementById('groups');
+      Object.keys(groups).forEach((g) => {
+        const sec = document.createElement('div');
+        sec.innerHTML = '<h2>' + g.replace(/_/g, ' ') + ' (' + groups[g].length + ')</h2>';
+        const grid = document.createElement('div');
+        grid.className = 'grid';
+        groups[g].forEach((it) => {
+          const roles = roleByAsset[it.name];
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.innerHTML =
+            '<div class="imgbox"><img src="' + it.svg + '" alt="' + it.name + '"></div>' +
+            '<div class="name">' + it.name + '</div>' +
+            '<div class="size">' + it.export_size.join(' × ') + '</div>' +
+            (roles ? '<div class="role">' + roles.join(' · ') + '</div>' : '');
+          grid.appendChild(cell);
+        });
+        sec.appendChild(grid);
+        root.appendChild(sec);
+      });
+    });
+  </script>
+</body>
+</html>

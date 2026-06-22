@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="230" viewBox="0 0 200 230">
+  <!-- Blobbie mascot (vector fallback used when an animation frame is missing) -->
+  <defs>
+    <radialGradient id="bbBody" cx="42%" cy="34%" r="75%">
+      <stop offset="0%" stop-color="#ffa9bb"/>
+      <stop offset="60%" stop-color="#ef7a8b"/>
+      <stop offset="100%" stop-color="#d65469"/>
+    </radialGradient>
+  </defs>
+  <path d="M100 14
+           C168 10 192 92 176 156
+           C166 198 138 220 100 220
+           C62 220 34 198 24 156
+           C8 92 32 10 100 14 Z"
+        fill="url(#bbBody)" stroke="#1d1d28" stroke-width="6"/>
+  <!-- cheek shine -->
+  <ellipse cx="70" cy="78" rx="26" ry="18" fill="#ffffff" fill-opacity="0.18"/>
+  <!-- eyes -->
+  <ellipse cx="74" cy="96" rx="22" ry="25" fill="#ffffff" stroke="#1d1d28" stroke-width="5"/>
+  <ellipse cx="126" cy="96" rx="22" ry="25" fill="#ffffff" stroke="#1d1d28" stroke-width="5"/>
+  <circle cx="80" cy="100" r="10" fill="#1d1d28"/>
+  <circle cx="120" cy="100" r="10" fill="#1d1d28"/>
+  <circle cx="84" cy="96" r="3.2" fill="#ffffff"/>
+  <circle cx="124" cy="96" r="3.2" fill="#ffffff"/>
+  <!-- smile -->
+  <path d="M74 150 Q100 178 126 150" fill="none" stroke="#7a1f2b" stroke-width="8" stroke-linecap="round"/>
+  <!-- little arms -->
+  <path d="M28 140 Q6 150 14 172" fill="none" stroke="#1d1d28" stroke-width="6" stroke-linecap="round"/>
+  <path d="M172 140 Q194 150 186 172" fill="none" stroke="#1d1d28" stroke-width="6" stroke-linecap="round"/>
+</svg>
