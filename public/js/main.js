@@ -22,9 +22,11 @@
     screens.forEach((s) => $('screen-' + s).classList.toggle('active', s === name));
     // hide the top bar on immersive / pre-login screens
     $('topbar').classList.toggle('hidden', name === 'loading' || name === 'identity' || name === 'game');
+    // on the main menu we hide the drawn game world and show only the optional
+    // GIF backdrop (or plain background); the scene still runs on other screens.
+    document.body.classList.toggle('menu-active', name === 'menu');
     if (name === 'menu') requestAnimationFrame(() => drawCharCanvas($('menuAvatar'), 'avatar'));
-    // pause the neon menu background while the game canvas is on screen
-    if (window.Background) window.Background.setActive(name !== 'game');
+    if (window.Background) window.Background.setActive(name !== 'game' && name !== 'menu');
   }
 
   function updateMuteBtn() {
@@ -133,7 +135,7 @@
     showScreen('loading');
     if (window.Character) Character.load();
     try { state.config = await Net.getConfig(); } catch (e) {}
-    $('feeLabel').textContent = state.config.entryFee;
+    const fl = $('feeLabel'); if (fl) fl.textContent = state.config.entryFee;
     Net.connect();
     wireEvents();
     wireSocket();
@@ -170,7 +172,7 @@
 
     // UI click feedback (menu buttons / cards / tabs)
     document.addEventListener('click', (e) => {
-      const el = e.target.closest('.btn, .mode-card, .lb-tab, .modal-close');
+      const el = e.target.closest('.btn, .mode-card, .mode-info, .lb-tab, .modal-close');
       if (el && !window.Sound.isMuted()) window.Sound.click();
     }, true);
   }
@@ -525,7 +527,7 @@
 
   async function openLeaderboard(scope) {
     scope = scope || 'week';
-    openModal('<h2>🏆 Leaderboard</h2><div class="lb-tabs"><button class="lb-tab" data-scope="week">This Week</button><button class="lb-tab" data-scope="all">All-time</button></div><div class="lb-list" id="lbList">Loading…</div>');
+    openModal('<h2>Leaderboard</h2><div class="lb-tabs"><button class="lb-tab" data-scope="week">This Week</button><button class="lb-tab" data-scope="all">All-time</button></div><div class="lb-list" id="lbList">Loading…</div>');
     const render = async (sc) => {
       Array.from(document.querySelectorAll('.lb-tab')).forEach((t) => t.classList.toggle('active', t.dataset.scope === sc));
       try {
@@ -546,7 +548,7 @@
   }
 
   async function openTournament() {
-    openModal('<h2>🎟️ Weekly Tournament</h2><div id="tourBody">Loading…</div>');
+    openModal('<h2>Weekly Tournament</h2><div id="tourBody">Loading…</div>');
     try {
       const t = await Net.tournament();
       const ms = Math.max(0, t.endsAt - Date.now());
@@ -563,8 +565,29 @@
     } catch (e) { $('tourBody').innerHTML = '<p class="subtitle">Could not load tournament.</p>'; }
   }
 
+  // Per-mode instructions, shown on demand via the (i) button on each mode card.
+  function openModeInfo(mode) {
+    const fee = (state.config && state.config.entryFee) || 50;
+    const INFO = {
+      solo: {
+        title: 'Solo Practice',
+        body: 'Warm up and learn the controls at your own pace. <b>Not ranked</b> and no entry fee — nothing is staked.',
+      },
+      ranked: {
+        title: 'Ranked PvP',
+        body: 'Race a random rival on the exact same track. <b>' + fee + ' $BLOBBIE</b> entry · winner takes the pool · your score counts on the <b>leaderboard</b>.',
+      },
+      friend: {
+        title: 'Play a Friend',
+        body: 'Create a private room and share the 4-letter code (up to 4 players). Free &amp; casual — nothing staked.',
+      },
+    };
+    const m = INFO[mode] || INFO.solo;
+    openModal('<h2>' + m.title + '</h2><p class="subtitle" style="margin-bottom:4px">' + m.body + '</p>');
+  }
+
   function openHowto() {
-    openModal('<h2>❓ How to play</h2><ul class="howto-list">' +
+    openModal('<h2>How to play</h2><ul class="howto-list">' +
       '<li><b>Move:</b> ◀ ▶ arrows / A·D / swipe to change lane.</li>' +
       '<li><b>Jump:</b> ▲ / W / Space / swipe up — clear low hurdles & grab arc coins.</li>' +
       '<li><b>Slide:</b> ▼ / S / swipe down — duck under bars.</li>' +
@@ -590,6 +613,9 @@
 
     Array.from(document.querySelectorAll('.mode-card')).forEach((c) => {
       c.onclick = () => chooseMode(c.dataset.mode);
+    });
+    Array.from(document.querySelectorAll('.mode-info')).forEach((b) => {
+      b.onclick = (e) => { e.stopPropagation(); openModeInfo(b.dataset.info); };
     });
 
     $('btnLeaderboard').onclick = () => openLeaderboard('week');

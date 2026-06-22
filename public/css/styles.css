@@ -15,6 +15,8 @@
   --card: rgba(16, 38, 26, 0.42);
   --card-brd: rgba(140, 240, 170, 0.34);
   --radius: 18px;
+  --font-body: "Fredoka", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font-display: "Luckiest Guy", "Fredoka", system-ui, cursive;
   --shadow: 0 18px 50px rgba(10, 40, 20, 0.4);
   --neon-cyan: 0 0 8px rgba(120,235,255,0.7), 0 0 20px rgba(120,235,255,0.35);
   --neon-pink: 0 0 8px rgba(255,158,209,0.7), 0 0 20px rgba(255,158,209,0.35);
@@ -42,12 +44,22 @@ body.bg-image #bgfx, body.bg-image #gameCanvas { background: transparent; }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; margin: 0; }
 body {
-  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  font-family: var(--font-body);
   color: var(--text);
   background: linear-gradient(160deg, var(--bg0), var(--bg1));
   overflow: hidden;
   user-select: none;
 }
+/* unique game display font for titles / big numbers */
+h1, h2, .play-title, .mode-name, .brand-name, .result-banner,
+.hud-score, .countdown span, .code-row code, .tour-pool .amt, .result-banner {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+/* on the main menu, hide the drawn game world (show only the GIF / plain bg) */
+body.menu-active #bgfx { display: none; }
 .brand-name { color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.35), var(--neon-cyan); }
 
 #app { position: relative; height: 100%; width: 100%; display: flex; flex-direction: column; z-index: 1; }
@@ -99,8 +111,8 @@ body {
 }
 .center { text-align: center; max-width: 420px; width: 100%; }
 
-h1 { font-size: 32px; margin: 8px 0 4px; font-weight: 900; letter-spacing: 1px; color: #fff; text-shadow: var(--neon-pink); }
-h2 { font-size: 22px; margin: 0 0 8px; text-shadow: var(--neon-cyan); }
+h1 { font-size: 44px; margin: 8px 0 6px; line-height: 1.05; color: #fff; text-align: center; text-shadow: var(--neon-pink); }
+h2 { font-size: 28px; margin: 0 0 10px; text-align: center; text-shadow: var(--neon-cyan); }
 .subtitle { color: var(--muted); font-size: 14px; margin: 0 0 18px; line-height: 1.5; }
 .hint { color: var(--muted); font-size: 12px; min-height: 16px; margin-top: 10px; }
 
@@ -148,25 +160,30 @@ h2 { font-size: 22px; margin: 0 0 8px; text-shadow: var(--neon-cyan); }
 .profile-stats { display: flex; gap: 14px; font-size: 13px; color: var(--muted); margin-top: 4px; flex-wrap: wrap; }
 .profile-stats b { color: var(--text); }
 
-.play-title { font-size: 15px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin: 0 0 10px 4px; }
-.mode-grid { display: flex; flex-direction: column; gap: 12px; }
+.play-title { font-size: 26px; color: #fff; text-align: center; letter-spacing: 1px; margin: 4px 0 14px; text-shadow: var(--neon-cyan); }
+.mode-grid { display: flex; flex-direction: column; gap: 14px; }
+.mode-cell { position: relative; }
 .mode-card {
-  text-align: left; cursor: pointer; color: var(--text);
+  width: 100%; text-align: center; cursor: pointer; color: var(--text);
   background: var(--card); border: 1px solid var(--card-brd); border-radius: 16px;
-  padding: 16px; display: grid; grid-template-columns: 46px 1fr; grid-template-rows: auto auto;
-  column-gap: 14px; align-items: center; transition: transform .1s ease, border-color .15s ease, background .15s;
+  padding: 22px 52px; display: block;
+  transition: transform .1s ease, border-color .15s ease, background .15s;
 }
 .mode-card:hover { transform: translateY(-2px); border-color: var(--purple-l); background: rgba(255,255,255,.1); }
 .mode-card:active { transform: scale(.98); }
 .mode-card.highlight { border-color: rgba(255,210,63,.7); background: linear-gradient(135deg, rgba(95,208,106,.18), rgba(255,210,63,.18)); box-shadow: 0 0 18px rgba(255,210,63,.3); }
-.mode-ic {
-  grid-row: 1 / span 2; font-size: 26px; text-align: center; width: 46px; height: 46px;
-  display: flex; align-items: center; justify-content: center; border-radius: 12px;
-  background: rgba(22,242,214,.10); border: 1px solid var(--card-brd); box-shadow: inset 0 0 12px rgba(22,242,214,.12);
+.mode-name { font-size: 27px; line-height: 1.1; }
+/* small (i) information button per mode */
+.mode-info {
+  position: absolute; top: 10px; right: 10px; width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center; z-index: 2;
+  border-radius: 50%; border: 1px solid var(--card-brd); background: rgba(22,242,214,.12);
+  color: var(--text); font-family: Georgia, "Times New Roman", serif; font-style: italic;
+  font-weight: 700; font-size: 16px; cursor: pointer;
+  box-shadow: inset 0 0 10px rgba(22,242,214,.15);
 }
-.mode-name { font-weight: 800; font-size: 17px; }
-.mode-desc { grid-column: 2; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
-.mode-desc b { color: var(--gold); }
+.mode-info:hover { background: rgba(22,242,214,.28); }
+.mode-info:active { transform: scale(.9); }
 
 .menu-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
 .menu-actions .btn { flex: 1; min-width: 120px; }
@@ -309,6 +326,10 @@ h2 { font-size: 22px; margin: 0 0 8px; text-shadow: var(--neon-cyan); }
 }
 
 @media (max-width: 480px) {
-  h1 { font-size: 26px; }
-  .hud-score { font-size: 28px; }
+  h1 { font-size: 34px; }
+  h2 { font-size: 24px; }
+  .play-title { font-size: 22px; }
+  .mode-name { font-size: 23px; }
+  .mode-card { padding: 18px 48px; }
+  .hud-score { font-size: 30px; }
 }

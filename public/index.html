@@ -6,6 +6,9 @@
   <meta name="theme-color" content="#1a1030" />
   <title>Blobbie Dash</title>
   <link rel="icon" type="image/png" href="assets/blobbie1.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Luckiest+Guy&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -68,27 +71,24 @@
 
         <h2 class="play-title">Choose a mode</h2>
         <div class="mode-grid">
-          <button class="mode-card" data-mode="solo">
-            <span class="mode-ic">🎮</span>
-            <span class="mode-name">Solo Practice</span>
-            <span class="mode-desc">Warm up. Not ranked, no fee.</span>
-          </button>
-          <button class="mode-card highlight" data-mode="ranked">
-            <span class="mode-ic">⚡</span>
-            <span class="mode-name">Ranked PvP</span>
-            <span class="mode-desc">Random rival · <b id="feeLabel">50</b> $BLOBBIE entry · winner takes the pool · counts on the leaderboard.</span>
-          </button>
-          <button class="mode-card" data-mode="friend">
-            <span class="mode-ic">🤝</span>
-            <span class="mode-name">Play a Friend</span>
-            <span class="mode-desc">Private room with a code. Free & casual.</span>
-          </button>
+          <div class="mode-cell">
+            <button class="mode-card" data-mode="solo"><span class="mode-name">Solo Practice</span></button>
+            <button class="mode-info" data-info="solo" title="How this mode works" aria-label="Solo Practice info">i</button>
+          </div>
+          <div class="mode-cell">
+            <button class="mode-card highlight" data-mode="ranked"><span class="mode-name">Ranked PvP</span></button>
+            <button class="mode-info" data-info="ranked" title="How this mode works" aria-label="Ranked PvP info">i</button>
+          </div>
+          <div class="mode-cell">
+            <button class="mode-card" data-mode="friend"><span class="mode-name">Play a Friend</span></button>
+            <button class="mode-info" data-info="friend" title="How this mode works" aria-label="Play a Friend info">i</button>
+          </div>
         </div>
 
         <div class="menu-actions">
-          <button class="btn btn-ghost" id="btnLeaderboard">🏆 Leaderboard</button>
-          <button class="btn btn-ghost" id="btnTournament">🎟️ Tournament</button>
-          <button class="btn btn-ghost" id="btnHowto">❓ How to play</button>
+          <button class="btn btn-ghost" id="btnLeaderboard">Leaderboard</button>
+          <button class="btn btn-ghost" id="btnTournament">Tournament</button>
+          <button class="btn btn-ghost" id="btnHowto">How to play</button>
         </div>
       </div>
     </section>
