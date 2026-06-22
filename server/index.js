@@ -13,6 +13,7 @@ const ENTRY_FEE = 50;            // ranked random match entry fee
 const RAKE = 0.10;               // 10% of pool feeds the weekly tournament
 const COUNTDOWN_MS = 3000;
 const FINISH_TIMEOUT_MS = 120000;
+const FIRST_OUT_GRACE_MS = 3000; // once the FIRST player is out, end the match after this
 
 const app = express();
 app.use(express.json());
@@ -124,6 +125,7 @@ function settleMatch(match, reason) {
   if (match.state === 'done') return;
   match.state = 'done';
   if (match.finishTimer) clearTimeout(match.finishTimer);
+  if (match.endTimer) clearTimeout(match.endTimer);
   const week = db.currentWeek();
 
   // rank by score (forfeiters sink to the bottom and can't win)
@@ -342,6 +344,7 @@ io.on('connection', (socket) => {
     const fin = { id: pl.id, name: pl.name, ...pl.result };
     for (const o of othersOf(match, socket.data.playerId)) io.to(o.socketId).emit('opponent:finished', fin);
     if (match.players.every((p) => p.finished)) settleMatch(match, 'finished');
+    else if (!match.endTimer) match.endTimer = setTimeout(() => settleMatch(match, 'first-out'), FIRST_OUT_GRACE_MS);
   });
 
   socket.on('match:forfeit', (msg) => {
@@ -370,6 +373,7 @@ function handleLeaveMatch(socket, match, reason) {
     const fin = { id: pl.id, name: pl.name, ...pl.result, left: true };
     for (const o of othersOf(match, pl.id)) io.to(o.socketId).emit('opponent:finished', fin);
     if (match.players.every((p) => p.finished)) settleMatch(match, reason);
+    else if (!match.endTimer) match.endTimer = setTimeout(() => settleMatch(match, 'first-out'), FIRST_OUT_GRACE_MS);
   } else {
     // pre-start: cancel & refund any escrow
     if (match.ranked) for (const p of match.players) db.adjustBalance(p.id, match.fee);
