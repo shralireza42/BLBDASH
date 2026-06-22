@@ -384,15 +384,34 @@
       return { x, y, scale: persp };
     }
 
+    // Camera zoom (editable in public/theme.js -> camera.zoom). 1 = default,
+    // higher = closer to Blobbie. Purely visual; gameplay/collisions unchanged.
+    _zoom() {
+      const z = window.BlobbieTheme && window.BlobbieTheme.camera && window.BlobbieTheme.camera.zoom;
+      const v = (typeof z === 'number' && isFinite(z)) ? z : 1.25;
+      return Math.max(0.8, Math.min(2.2, v));
+    }
+
     // ---- rendering ----
     _render() {
       const ctx = this.ctx, W = this.W, H = this.H;
+      const now = performance.now();
+
+      // camera zoom — scale the whole scene around the character's feet so the
+      // camera feels closer/lower while Blobbie stays anchored at the bottom.
+      const zoom = this._zoom();
+      ctx.save();
+      if (zoom !== 1) {
+        ctx.translate(this.centerX, this.groundY);
+        ctx.scale(zoom, zoom);
+        ctx.translate(-this.centerX, -this.groundY);
+      }
+
       // ONE shared underwater-tunnel background (identical to the menu)
       if (this.bg) this.bg.draw(ctx);
       this._drawSpeedLines(ctx); // scrolling lane cross-lines for forward-motion feel
 
       // camera shake jolts the gameplay layer only (keeps bg edges clean)
-      const now = performance.now();
       let shx = 0, shy = 0;
       if (now < this.shakeUntil) {
         const m = ((this.shakeUntil - now) / 420) * 9;
@@ -424,9 +443,10 @@
       this._drawPlayer(ctx);
       this._drawParticles(ctx);
       this._drawPops(ctx);
-      ctx.restore();
+      ctx.restore(); // shake layer
+      ctx.restore(); // camera zoom
 
-      // fence-bump warning (screen-fixed, above the shake layer)
+      // fence-bump warning (screen-fixed, above the zoom/shake layers)
       if (now < this.fenceMsgUntil && this.alive) {
         ctx.save();
         ctx.globalAlpha = Math.min(1, (this.fenceMsgUntil - now) / 400);

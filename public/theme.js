@@ -105,6 +105,14 @@ window.BlobbieTheme = {
   // Scrolling speed-lines on the road (motion feel). Set to null to hide them.
   speedLine: 'rgba(255,250,225,0.32)',
 
+  /* ------------------------------------------------------------- CAMERA ----
+   * How close the camera sits to Blobbie. 1 = default; higher = closer/zoomed-in
+   * (Blobbie and obstacles look bigger), lower = pulled back. Range ~0.8–2.2.
+   */
+  camera: {
+    zoom: 1.25,
+  },
+
   /* ---------------------------------------------------------- CHARACTER ----
    * File format for the animated player frames in assets/character/.
    *   'svg' -> loads assets/character/svg/<frame>.svg   (default)

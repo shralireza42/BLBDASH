@@ -163,7 +163,19 @@ gameplayBackground: 'assets/backgrounds/world.gif',
 gameplayBackgroundMode: 'cover', // or 'contain'
 ```
 
-## 9. Speed lines & effects
+## 9. Camera zoom
+
+Set how close the camera sits to Blobbie in `theme.js`:
+
+```js
+camera: { zoom: 1.25 } // 1 = default, higher = closer, lower = pulled back (~0.8–2.2)
+```
+
+It scales the whole scene around Blobbie's feet (he stays anchored at the bottom),
+so a higher value makes Blobbie and obstacles look bigger/closer. It's purely
+visual — gameplay and collisions are unchanged.
+
+## 10. Speed lines & effects
 
 - `theme.speedLine` — the scrolling motion lines on the road (a color, or `null` to hide).
 - Coin-pickup sparks / crash particles use the coin & obstacle colors above.
