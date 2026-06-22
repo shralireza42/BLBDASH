@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blobbie Dash — Embed Example</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #120a26; color: #eee; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+    h1 { font-weight: 800; }
+    p { color: #b9a9d8; line-height: 1.6; }
+    /* Responsive 9:16-ish frame that works well on a page. */
+    .game-embed {
+      position: relative; width: 100%; max-width: 420px; margin: 20px auto;
+      aspect-ratio: 9 / 16; border-radius: 20px; overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0,0,0,.5);
+    }
+    .game-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+    code { background: #00000055; padding: 2px 6px; border-radius: 6px; }
+    pre { background: #00000055; padding: 14px; border-radius: 12px; overflow:auto; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Embedding Blobbie Dash on your website</h1>
+    <p>Drop this snippet anywhere on your page. Point the <code>src</code> at wherever
+       you host the game (this server's root URL).</p>
+
+    <pre>&lt;div style="position:relative;width:100%;max-width:420px;margin:auto;aspect-ratio:9/16;
+            border-radius:20px;overflow:hidden"&gt;
+  &lt;iframe src="https://YOUR-DOMAIN/" allow="autoplay; clipboard-write"
+          style="position:absolute;inset:0;width:100%;height:100%;border:0"&gt;&lt;/iframe&gt;
+&lt;/div&gt;</pre>
+
+    <h2>Live preview</h2>
+    <div class="game-embed">
+      <iframe src="/" allow="autoplay; clipboard-write" title="Blobbie Dash"></iframe>
+    </div>
+  </div>
+</body>
+</html>

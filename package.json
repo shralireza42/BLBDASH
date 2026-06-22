@@ -1,0 +1,26 @@
+{
+  "name": "blobbie-dash",
+  "version": "1.0.0",
+  "description": "Blobbie Dash - an endless PvP runner game with leaderboards, tournaments and a $BLOBBIE token prize pool. Embeddable on any website.",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "keywords": [
+    "game",
+    "runner",
+    "pvp",
+    "blobbie",
+    "leaderboard",
+    "websocket"
+  ],
+  "author": "Blobbie Dash",
+  "license": "MIT",
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}

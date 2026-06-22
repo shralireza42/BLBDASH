@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="340" viewBox="0 0 240 340">
+  <g transform="rotate(3.42 120 254.8942976949652)">
+    <!-- legs -->
+    <rect x="66" y="254.8942976949652" width="31.200000000000003" height="54.4" rx="15.600000000000001" fill="#ffd23f" stroke="#1d1d28" stroke-width="3"/>
+    <rect x="142.8" y="234.10968800413866" width="31.200000000000003" height="54.4" rx="15.600000000000001" fill="#ffd23f" stroke="#1d1d28" stroke-width="3"/>
+    <!-- body (back view: no face) -->
+    <rect x="60" y="44.09429769496518" width="120" height="210.8" rx="54" fill="#ffd23f" stroke="#1d1d28" stroke-width="3"/>
+    <ellipse cx="120" cy="82.03829769496518" rx="36" ry="25.296" fill="#ffffff" fill-opacity="0.18"/>
+  </g>
+  <text x="120" y="170" font-family="system-ui, sans-serif" font-weight="900"
+        font-size="81.60000000000001" fill="#1d1d28" fill-opacity="0.22" text-anchor="middle" dominant-baseline="middle">6</text>
+  <text x="120" y="332" font-family="system-ui, sans-serif" font-weight="700"
+        font-size="13" fill="#ffd23f" text-anchor="middle">move_right 06</text>
+</svg>

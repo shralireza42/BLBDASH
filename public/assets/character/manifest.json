@@ -1,0 +1,354 @@
+[
+  {
+    "name": "run_back_frame_01",
+    "group": "run",
+    "frame": 1,
+    "frames": 8,
+    "export_size": [
+      220,
+      340
+    ],
+    "svg": "svg/run_back_frame_01.svg"
+  },
+  {
+    "name": "run_back_frame_02",
+    "group": "run",
+    "frame": 2,
+    "frames": 8,
+    "export_size": [
+      220,
+      340
+    ],
+    "svg": "svg/run_back_frame_02.svg"
+  },
+  {
+    "name": "run_back_frame_03",
+    "group": "run",
+    "frame": 3,
+    "frames": 8,
+    "export_size": [
+      220,
+      340
+    ],
+    "svg": "svg/run_back_frame_03.svg"
+  },
+  {
+    "name": "run_back_frame_04",
+    "group": "run",
+    "frame": 4,
+    "frames": 8,
+    "export_size": [
+      220,
+      340
+    ],
+    "svg": "svg/run_back_frame_04.svg"
+  },
+  {
+    "name": "run_back_frame_05",
+    "group": "run",
+    "frame": 5,
+    "frames": 8,
+    "export_size": [
+      220,
+      340
+    ],
+    "svg": "svg/run_back_frame_05.svg"
+  },
+  {
+    "name": "run_back_frame_06",
+    "group": "run",
+    "frame": 6,
+    "frames": 8,
+    "export_size": [
+      220,
+      340
+    ],
+    "svg": "svg/run_back_frame_06.svg"
+  },
+  {
+    "name": "run_back_frame_07",
+    "group": "run",
+    "frame": 7,
+    "frames": 8,
+    "export_size": [
+      220,
+      340
+    ],
+    "svg": "svg/run_back_frame_07.svg"
+  },
+  {
+    "name": "run_back_frame_08",
+    "group": "run",
+    "frame": 8,
+    "frames": 8,
+    "export_size": [
+      220,
+      340
+    ],
+    "svg": "svg/run_back_frame_08.svg"
+  },
+  {
+    "name": "jump_back_frame_01",
+    "group": "jump_back",
+    "frame": 1,
+    "frames": 6,
+    "export_size": [
+      220,
+      360
+    ],
+    "svg": "svg/jump_back_frame_01.svg"
+  },
+  {
+    "name": "jump_back_frame_02",
+    "group": "jump_back",
+    "frame": 2,
+    "frames": 6,
+    "export_size": [
+      220,
+      360
+    ],
+    "svg": "svg/jump_back_frame_02.svg"
+  },
+  {
+    "name": "jump_back_frame_03",
+    "group": "jump_back",
+    "frame": 3,
+    "frames": 6,
+    "export_size": [
+      220,
+      360
+    ],
+    "svg": "svg/jump_back_frame_03.svg"
+  },
+  {
+    "name": "jump_back_frame_04",
+    "group": "jump_back",
+    "frame": 4,
+    "frames": 6,
+    "export_size": [
+      220,
+      360
+    ],
+    "svg": "svg/jump_back_frame_04.svg"
+  },
+  {
+    "name": "jump_back_frame_05",
+    "group": "jump_back",
+    "frame": 5,
+    "frames": 6,
+    "export_size": [
+      220,
+      360
+    ],
+    "svg": "svg/jump_back_frame_05.svg"
+  },
+  {
+    "name": "jump_back_frame_06",
+    "group": "jump_back",
+    "frame": 6,
+    "frames": 6,
+    "export_size": [
+      220,
+      360
+    ],
+    "svg": "svg/jump_back_frame_06.svg"
+  },
+  {
+    "name": "jump_slide_sit_mix_back_frame_01",
+    "group": "jump_slide",
+    "frame": 1,
+    "frames": 6,
+    "export_size": [
+      264,
+      300
+    ],
+    "svg": "svg/jump_slide_sit_mix_back_frame_01.svg"
+  },
+  {
+    "name": "jump_slide_sit_mix_back_frame_02",
+    "group": "jump_slide",
+    "frame": 2,
+    "frames": 6,
+    "export_size": [
+      264,
+      300
+    ],
+    "svg": "svg/jump_slide_sit_mix_back_frame_02.svg"
+  },
+  {
+    "name": "jump_slide_sit_mix_back_frame_03",
+    "group": "jump_slide",
+    "frame": 3,
+    "frames": 6,
+    "export_size": [
+      264,
+      300
+    ],
+    "svg": "svg/jump_slide_sit_mix_back_frame_03.svg"
+  },
+  {
+    "name": "jump_slide_sit_mix_back_frame_04",
+    "group": "jump_slide",
+    "frame": 4,
+    "frames": 6,
+    "export_size": [
+      264,
+      300
+    ],
+    "svg": "svg/jump_slide_sit_mix_back_frame_04.svg"
+  },
+  {
+    "name": "jump_slide_sit_mix_back_frame_05",
+    "group": "jump_slide",
+    "frame": 5,
+    "frames": 6,
+    "export_size": [
+      264,
+      300
+    ],
+    "svg": "svg/jump_slide_sit_mix_back_frame_05.svg"
+  },
+  {
+    "name": "jump_slide_sit_mix_back_frame_06",
+    "group": "jump_slide",
+    "frame": 6,
+    "frames": 6,
+    "export_size": [
+      264,
+      300
+    ],
+    "svg": "svg/jump_slide_sit_mix_back_frame_06.svg"
+  },
+  {
+    "name": "move_left_back_frame_01",
+    "group": "move_left",
+    "frame": 1,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_left_back_frame_01.svg"
+  },
+  {
+    "name": "move_left_back_frame_02",
+    "group": "move_left",
+    "frame": 2,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_left_back_frame_02.svg"
+  },
+  {
+    "name": "move_left_back_frame_03",
+    "group": "move_left",
+    "frame": 3,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_left_back_frame_03.svg"
+  },
+  {
+    "name": "move_left_back_frame_04",
+    "group": "move_left",
+    "frame": 4,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_left_back_frame_04.svg"
+  },
+  {
+    "name": "move_left_back_frame_05",
+    "group": "move_left",
+    "frame": 5,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_left_back_frame_05.svg"
+  },
+  {
+    "name": "move_left_back_frame_06",
+    "group": "move_left",
+    "frame": 6,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_left_back_frame_06.svg"
+  },
+  {
+    "name": "move_right_back_frame_01",
+    "group": "move_right",
+    "frame": 1,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_right_back_frame_01.svg"
+  },
+  {
+    "name": "move_right_back_frame_02",
+    "group": "move_right",
+    "frame": 2,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_right_back_frame_02.svg"
+  },
+  {
+    "name": "move_right_back_frame_03",
+    "group": "move_right",
+    "frame": 3,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_right_back_frame_03.svg"
+  },
+  {
+    "name": "move_right_back_frame_04",
+    "group": "move_right",
+    "frame": 4,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_right_back_frame_04.svg"
+  },
+  {
+    "name": "move_right_back_frame_05",
+    "group": "move_right",
+    "frame": 5,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_right_back_frame_05.svg"
+  },
+  {
+    "name": "move_right_back_frame_06",
+    "group": "move_right",
+    "frame": 6,
+    "frames": 6,
+    "export_size": [
+      240,
+      340
+    ],
+    "svg": "svg/move_right_back_frame_06.svg"
+  }
+]

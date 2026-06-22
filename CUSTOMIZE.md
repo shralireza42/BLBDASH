@@ -1,0 +1,230 @@
+# Customizing Blobbie Dash
+
+**Everything visual and audible is replaceable from one file: [`public/theme.js`](public/theme.js).**
+Edit it, refresh the page — done. No build step. Anything you leave `null` keeps the
+built-in default, so you can change one thing at a time.
+
+Out of the box the theme already points the obstacle sprites, music, footsteps,
+tunnel glass texture and gameplay background at bundled asset paths (e.g.
+`assets/sprites/jump.png`, `assets/sounds/music.mp3`, `assets/backgrounds/world.gif`).
+**You don't have to provide those files** — if any are missing the game falls back
+to the drawn art / synth sound automatically. Drop your own files at those paths to
+use them.
+
+Put your media in these folders (paths in `theme.js` are relative to `/public`):
+
+| Folder | For |
+| --- | --- |
+| `public/assets/sprites/` | coin, obstacle and player images |
+| `public/assets/textures/` | sky / ground / road textures |
+| `public/assets/backgrounds/` | full-scene image or animated GIF backdrop |
+| `public/assets/sounds/` | music + sound-effect files |
+| `public/assets/character/` | the animated player (SVG frames) |
+
+Supported image formats: **PNG, JPG, SVG, and animated GIF**. Audio: **MP3/OGG/WAV**.
+
+---
+
+## 1. UI colors (buttons, text, page background)
+
+`theme.ui.*` — these map to the whole interface.
+
+| Key | Affects |
+| --- | --- |
+| `text`, `muted` | text colors |
+| `ink` | dark text on bright buttons |
+| `pageBgTop`, `pageBgBottom` | page/menu background gradient (behind the game) |
+| `accentCyan`, `accentCyanLight` | primary accent, button gradient start, glows |
+| `accentPink`, `accentPinkDark` | secondary accent, button gradient end |
+| `accentPurple`, `accentPurpleLight` | extra accent |
+| `accentGreen` | success / leaf accent |
+| `gold` | coin / $BLOBBIE accent |
+| `cardBg`, `cardBorder` | glass panels (menu cards, HUD, modals) |
+
+```js
+ui: { accentCyan: '#ff7a59', accentPink: '#ffd23f', text: '#fff', /* ... */ }
+```
+
+**Button & panel background images** — use your own art/texture behind the UI
+(drop files in `public/assets/ui/`):
+
+```js
+ui: {
+  buttonTexture: 'assets/ui/button.png', // behind every button
+  cardTexture:   'assets/ui/panel.png',  // behind menu/result panels & mode cards
+}
+```
+Images are scaled to cover; keep `ui.ink`/`ui.text` readable against them.
+
+## 2. Game world colors (sky, mountains, road, trees…)
+
+`theme.world.*`. Arrays are gradients/layers (top → bottom / far → near).
+
+`sky`, `sunGlow`, `sunCore`, `ground`, `hill`, `mountainFar`, `mountainSnow`,
+`mountainNear`, `path` (tunnel floor), `pathBorder`, `pathRim`, `laneLine`,
+`blossom`, `treeTrunk`, `treeCanopy`, `bird`, `firefly`, `pollen`.
+
+**The glass tunnel** — the player runs *inside* a translucent "liquid glass" tube and
+sees the outside scene through it. Colors live in `world.tunnel`:
+
+| Key | What |
+| --- | --- |
+| `glass` | translucent glass body (keep the alpha low so you see outside) |
+| `glassTop` | glass near the ceiling (a touch stronger) |
+| `rib` | the tube rings / ribs |
+| `gloss` | the moving liquid-glass highlights |
+| `rim` | glowing line where the glass wall meets the floor |
+| `height` | tunnel **height** (taller arch). 1 = low, `1.6` = tall (default) |
+| `width` | tunnel **width** relative to the road. `1` = road width, `>1` = wider |
+| `texture` | image **tiled across the whole tunnel** glass, e.g. `'assets/textures/glass.png'` |
+| `textureAlpha` | opacity of that glass texture (0–1) |
+
+**Background blur** (depth-of-field): blur the whole outside world so the tunnel
+interior stays in focus. Editable via `world.backgroundBlur` (px; 0 = sharp). It also
+blurs a `gameplayBackground` GIF/image.
+
+```js
+world: { backgroundBlur: 5, tunnel: { height: 1.8, width: 1.2, texture: 'assets/textures/glass.png' } }
+```
+
+```js
+world: { tunnel: { glass: 'rgba(255,150,90,0.12)', rib: 'rgba(255,200,150,0.5)', rim: '#ffcf8a' } }
+```
+
+The **outside world** seen through the glass is everything else in `world` (sky,
+mountains, trees…), or your textures, or your `gameplayBackground` image/GIF — all
+customizable as above.
+
+> Gameplay note: pressing toward the edge while already in the outer lane **bumps the
+> glass wall** — the first bump warns, a **second** bump ends the run. The bump uses
+> `theme.sounds.fence` (or the built-in synth).
+
+```js
+world: { sky: ['#1b1033', '#3a1d6e', '#6a2fb0'], path: ['#3a2a55', '#4a356e', '#5a4080'] }
+```
+
+## 3. Textures (images over sky / ground / road)
+
+`theme.world.textures` — drop files in `public/assets/textures/`.
+
+```js
+world: { textures: {
+  sky:    'assets/textures/sky.png',
+  ground: 'assets/textures/grass.png',
+  road:   'assets/textures/road.png',
+} }
+```
+
+## 4. Coin
+
+Color it via `theme.coin.{core,mid,edge,rim,text,glow}`, **or** replace it entirely
+with your own image/GIF (it auto-spins):
+
+```js
+sprites: { coin: 'assets/sprites/coin.png' }
+```
+
+## 5. Obstacles
+
+Re-color via `theme.obstacles.*`, **or** replace with your own images. Easiest is by
+**what the player must do**:
+
+```js
+sprites: { obstacles: {
+  jump:  'assets/sprites/jump.png',   // sits on the path  -> JUMP OVER
+  slide: 'assets/sprites/slide.png',  // hangs overhead    -> SLIDE UNDER
+  block: 'assets/sprites/wall.png',   // tall              -> DODGE (change lane)
+} }
+```
+
+Finer control (these override the type above): `rock`, `log` (jump variants),
+`branch`, `arch` (slide variants), `tree`, `boulder` (block variants).
+
+Images are auto-sized for their slot and centered on the lane; aspect ratio is kept.
+
+## 6. Player (Blobbie)
+
+Two options:
+
+**A. Single image (simplest):**
+```js
+sprites: { player: 'assets/sprites/player.png' }
+```
+
+**B. Full animation (recommended):** replace the character frames keeping the same
+file names. The 5 animations are run / jump / slide / move-left / move-right. Open
+`/assets/character/preview.html` to see every frame and the input→animation map.
+
+Choose the **file format** and **size** in `theme.js`:
+```js
+character: {
+  format: 'png', // or 'svg'
+  size: 5,       // 1 (small) … 10 (big); 5 = default size. Visual only —
+                 // hitboxes/collisions are unchanged. Also scales rival ghosts.
+}
+```
+- `png` (default) → frames load from `public/assets/character/png/<frame>.png`
+- `svg`           → frames load from `public/assets/character/svg/<frame>.svg`
+- If a frame is missing in the chosen format the game automatically tries the
+  other format, then falls back to `blobbie.svg`.
+
+The other format is tried automatically if a file is missing, so you can switch any
+time or even mix. To change frame counts/timing, edit `ANIM` in
+[`public/js/character.js`](public/js/character.js). Final fallback if a frame is
+absent: `assets/blobbie.svg` (or `assets/blobbie.png`).
+
+## 7. Sounds & music
+
+Replace the built-in synthesized audio with your own files (`theme.sounds.*`):
+
+```js
+sounds: {
+  music: 'assets/sounds/music.mp3',  // loops
+  jump: 'assets/sounds/jump.mp3', coin: 'assets/sounds/coin.mp3', crash: 'assets/sounds/crash.mp3',
+  footstep: 'assets/sounds/footstep.mp3', // plays repeatedly while running
+  // also: slide, lane, win, lose, click, count, go
+}
+```
+
+`footstep` plays on a cadence while Blobbie runs on the ground (the rhythm speeds up
+with the game). It's a soft synth tap by default — set a file to replace it.
+
+## 8. Gameplay background (image or animated GIF)
+
+Use a full scene / GIF as the backdrop behind the road (menu + gameplay). It
+animates; the engine draws the road + props on top so the runner still works.
+
+```js
+gameplayBackground: 'assets/backgrounds/world.gif',
+gameplayBackgroundMode: 'cover', // or 'contain'
+```
+
+## 9. Camera zoom
+
+Set how close the camera sits to Blobbie in `theme.js`:
+
+```js
+camera: {
+  zoom: 1.25,    // 1 = default, higher = closer, lower = pulled back (~0.8–2.2)
+  horizon: 0.30, // camera ANGLE: where the horizon sits (fraction of height).
+                 // LOWER = look more DOWN (more floor / top-down), HIGHER = flatter. (0.15–1.0)
+}
+```
+
+`zoom` scales the scene around Blobbie's feet (he stays anchored at the bottom).
+`horizon` tilts the camera: lower values push the horizon up so you see more of the
+floor (a more downward angle); higher values (up to `1.0`) make the view flatter /
+more level. Very high values flatten the road to a thin strip near the bottom. Both
+are purely visual — gameplay is unchanged.
+
+## 10. Speed lines & effects
+
+- `theme.speedLine` — the scrolling motion lines on the road (a color, or `null` to hide).
+- Coin-pickup sparks / crash particles use the coin & obstacle colors above.
+
+---
+
+### Tips
+- Keep transparent PNG/SVG for clean sprite edges.
+- Keep GIF/audio file sizes small for smooth mobile play.
+- Mix and match: e.g. keep the drawn world but swap only the coin and music.
