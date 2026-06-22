@@ -56,9 +56,18 @@ sees the outside scene through it. Colors live in `world.tunnel`:
 | `rib` | the tube rings / ribs |
 | `gloss` | the moving liquid-glass highlights |
 | `rim` | glowing line where the glass wall meets the floor |
-| `blur` | **frosted glass** — blur (px) of the world seen *through* the tunnel (0 = clear) |
-| `texture` | optional image laid over the glass, e.g. `'assets/textures/glass.png'` |
+| `height` | tunnel **height** (taller arch). 1 = low, `1.6` = tall (default) |
+| `width` | tunnel **width** relative to the road. `1` = road width, `>1` = wider |
+| `texture` | image **tiled across the whole tunnel** glass, e.g. `'assets/textures/glass.png'` |
 | `textureAlpha` | opacity of that glass texture (0–1) |
+
+**Background blur** (depth-of-field): blur the whole outside world so the tunnel
+interior stays in focus. Editable via `world.backgroundBlur` (px; 0 = sharp). It also
+blurs a `gameplayBackground` GIF/image.
+
+```js
+world: { backgroundBlur: 5, tunnel: { height: 1.8, width: 1.2, texture: 'assets/textures/glass.png' } }
+```
 
 ```js
 world: { tunnel: { glass: 'rgba(255,150,90,0.12)', rib: 'rgba(255,200,150,0.5)', rim: '#ffcf8a' } }

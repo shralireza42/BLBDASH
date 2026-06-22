@@ -263,62 +263,57 @@
     }
 
     // tube arch at depth z: an ellipse CENTERED ON THE FLOOR EDGE line, so its
-    // TOP half springs from the two road edges and arches over the road.
+    // TOP half springs from the road edges and arches over the road. Height &
+    // width are editable via theme.world.tunnel.{height,width}.
     _ringAt(z) {
       const l = this.project(z, -LANE_EDGE, 0);
       const r = this.project(z, LANE_EDGE, 0);
-      const cx = (l.x + r.x) / 2;
-      const rx = (r.x - l.x) / 2;
-      return { cx, baseY: l.y, rx, ry: rx * 0.92, scale: l.scale };
+      const tnl = W_().tunnel || {};
+      const wMul = (typeof tnl.width === 'number') ? tnl.width : 1.0;
+      const hMul = (typeof tnl.height === 'number') ? tnl.height : 1.6;
+      const roadHalf = (r.x - l.x) / 2;
+      return { cx: (l.x + r.x) / 2, baseY: l.y, rx: roadHalf * wMul, ry: roadHalf * 0.92 * hMul, scale: l.scale };
+    }
+
+    _archPath(ctx, g) {
+      ctx.beginPath();
+      ctx.ellipse(g.cx, g.baseY, g.rx, g.ry, 0, Math.PI, 2 * Math.PI); // top arc
+      ctx.closePath(); // close along the road edge line -> the arch dome
     }
 
     // The player runs INSIDE a translucent "liquid glass" tunnel that arches
-    // OVER the road (nothing is drawn under the road). The outside world shows
-    // through the glass.
+    // OVER the road. The tall arch dome covers the whole visible tube, so the
+    // glass + texture line the FULL length. The floor is drawn LAST so it stays
+    // clean (no texture on the running surface).
     _drawPath(ctx) {
       const w = W_();
       const tnl = w.tunnel || {};
       const nL = this.roadNearL, nR = this.roadNearR, fL = this.roadFarL, fR = this.roadFarR;
-
-      // ---- FLOOR (running surface) — drawn first so it stays clean ----
-      const pathC = def(w.path, ['#cda978', '#dcbe8c', '#e9d2a4']);
-      const path = ctx.createLinearGradient(0, this.horizonY, 0, this.H);
-      path.addColorStop(0, pathC[0]); path.addColorStop(0.55, pathC[1]); path.addColorStop(1, pathC[2]);
-      ctx.fillStyle = path;
-      this._roundedTrap(ctx, nL, nR, fL, fR); ctx.fill();
-      if (this._tex.road) {
-        ctx.save(); this._roundedTrap(ctx, nL, nR, fL, fR); ctx.clip();
-        ctx.globalAlpha = 0.9;
-        this._cover(ctx, this._tex.road, Math.min(fL.x, nL.x), fL.y, Math.max(nR.x, fR.x) - Math.min(fL.x, nL.x), this.groundY - fL.y);
-        ctx.restore();
-      }
-
-      // ---- translucent GLASS BODY, only in the ARCH above the road ----
       const near = this._ringAt(PLAYER_Z);
+
+      // ---- translucent GLASS BODY (whole arch dome -> full tunnel) ----
       ctx.save();
-      ctx.beginPath();
-      ctx.ellipse(near.cx, near.baseY, near.rx, near.ry, 0, Math.PI, 2 * Math.PI); // top arc
-      ctx.closePath(); // close along the road edge line -> fills the dome only
-      ctx.clip();
+      this._archPath(ctx, near); ctx.clip();
       const top = near.baseY - near.ry;
       const body = ctx.createLinearGradient(0, top, 0, near.baseY);
       body.addColorStop(0, def(tnl.glassTop, 'rgba(120,210,255,0.20)'));
       body.addColorStop(0.62, def(tnl.glass, 'rgba(150,225,255,0.12)'));
-      body.addColorStop(1, 'rgba(150,225,255,0.0)');
+      body.addColorStop(1, 'rgba(150,225,255,0.04)');
       ctx.fillStyle = body;
       ctx.fillRect(0, top, this.W, near.ry + 4);
       ctx.restore();
 
-      // ---- optional GLASS TEXTURE overlay (clipped to the arch) ----
+      // ---- GLASS TEXTURE — TILED across the whole tunnel arch ----
       if (this._tex.tunnel) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(near.cx, near.baseY, near.rx, near.ry, 0, Math.PI, 2 * Math.PI); ctx.closePath();
-        ctx.clip();
-        ctx.globalAlpha = (typeof tnl.textureAlpha === 'number') ? tnl.textureAlpha : 0.5;
-        this._cover(ctx, this._tex.tunnel, near.cx - near.rx, near.baseY - near.ry, near.rx * 2, near.ry);
-        ctx.restore();
-        ctx.globalAlpha = 1;
+        const pat = ctx.createPattern(this._tex.tunnel, 'repeat');
+        if (pat) {
+          ctx.save();
+          this._archPath(ctx, near); ctx.clip();
+          ctx.globalAlpha = (typeof tnl.textureAlpha === 'number') ? tnl.textureAlpha : 0.5;
+          ctx.fillStyle = pat;
+          ctx.fillRect(near.cx - near.rx, top, near.rx * 2, near.ry);
+          ctx.restore(); ctx.globalAlpha = 1;
+        }
       }
 
       // ---- TUBE RIBS (top arches receding to the vanishing point) ----
@@ -331,6 +326,19 @@
         ctx.beginPath(); ctx.ellipse(g.cx, g.baseY, g.rx, g.ry, 0, Math.PI, 2 * Math.PI); ctx.stroke();
       }
       ctx.globalAlpha = 1; ctx.restore();
+
+      // ---- FLOOR (running surface) — drawn LAST so it stays clean ----
+      const pathC = def(w.path, ['#cda978', '#dcbe8c', '#e9d2a4']);
+      const path = ctx.createLinearGradient(0, this.horizonY, 0, this.H);
+      path.addColorStop(0, pathC[0]); path.addColorStop(0.55, pathC[1]); path.addColorStop(1, pathC[2]);
+      ctx.fillStyle = path;
+      this._roundedTrap(ctx, nL, nR, fL, fR); ctx.fill();
+      if (this._tex.road) {
+        ctx.save(); this._roundedTrap(ctx, nL, nR, fL, fR); ctx.clip();
+        ctx.globalAlpha = 0.9;
+        this._cover(ctx, this._tex.road, Math.min(fL.x, nL.x), fL.y, Math.max(nR.x, fR.x) - Math.min(fL.x, nL.x), this.groundY - fL.y);
+        ctx.restore();
+      }
 
       // ---- lane lines on the floor ----
       ctx.save(); ctx.strokeStyle = def(w.laneLine, 'rgba(120,90,50,0.35)');
@@ -436,26 +444,19 @@
     draw(ctx) {
       if (!this._built) return;
       if (this.imageBg) ctx.clearRect(0, 0, this.W, this.H); // let the GIF/image show behind
+
+      // BACKGROUND BLUR (editable): blur the whole outside world so the tunnel
+      // interior stays in focus. (GIF backdrops are blurred via CSS in main.js.)
+      const bgBlur = Math.min(24, Math.max(0, def(W_().backgroundBlur, 0)));
+      ctx.save();
+      if (bgBlur > 0 && !this.imageBg) ctx.filter = 'blur(' + bgBlur + 'px)';
       ctx.drawImage(this.staticCanvas, 0, 0, this.W, this.H); // OUTSIDE world
-      this._drawFliers(ctx);     // birds + butterflies (outside, behind glass)
+      this._drawFliers(ctx);     // birds + butterflies (part of the background)
       this._drawPollen(ctx);
+      ctx.filter = 'none';
+      ctx.restore();
 
-      // frosted glass: blur the world seen THROUGH the tunnel (editable)
-      const tnl = W_().tunnel || {};
-      const blur = (typeof tnl.blur === 'number') ? tnl.blur : 0;
-      if (blur > 0 && !this.imageBg && this.staticCanvas) {
-        const near = this._ringAt(PLAYER_Z);
-        ctx.save();
-        ctx.beginPath();
-        ctx.ellipse(near.cx, near.baseY, near.rx, near.ry, 0, Math.PI, 2 * Math.PI); ctx.closePath();
-        ctx.clip();
-        ctx.filter = 'blur(' + Math.min(24, blur) + 'px)';
-        ctx.drawImage(this.staticCanvas, 0, 0, this.W, this.H);
-        ctx.filter = 'none';
-        ctx.restore();
-      }
-
-      ctx.drawImage(this.tunnelCanvas, 0, 0, this.W, this.H); // glass tunnel + floor + ribs
+      ctx.drawImage(this.tunnelCanvas, 0, 0, this.W, this.H); // glass tunnel + floor + ribs (sharp)
       this._drawLiquid(ctx);     // flowing liquid-glass highlights
       this._drawSunDapples(ctx); // light on the floor
       this._drawFireflies(ctx);

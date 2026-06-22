@@ -56,6 +56,10 @@ window.BlobbieTheme = {
     pathRim:       '#bdf0ff',  // bright rim line where the glass wall meets the floor
     fence:         '#9c6b3f',  // (legacy) side fences
 
+    // Blur the whole BACKGROUND (outside world) so the tunnel interior stays in
+    // focus. 0 = sharp; higher = blurrier. (Also blurs a GIF backdrop.)
+    backgroundBlur: 5,
+
     // Liquid-glass TUNNEL the player runs inside (translucent — you see outside).
     tunnel: {
       glass:  'rgba(150, 225, 255, 0.12)', // translucent glass body (low alpha = see-through)
@@ -63,8 +67,9 @@ window.BlobbieTheme = {
       rib:    'rgba(190, 245, 255, 0.55)', // the tube "ribs" (glass rings)
       gloss:  'rgba(255, 255, 255, 0.6)',  // moving glass highlights / shine
       rim:    '#9fe9ff',                    // neon wall-base line along the floor edges
-      blur:   0,    // frosted glass: blur (px) of the world seen THROUGH the tunnel (0 = clear)
-      texture: null, // optional image laid over the glass, e.g. 'assets/textures/glass.png'
+      height: 1.6,  // tunnel HEIGHT (taller arch). 1 = low, higher = taller.
+      width:  1.0,  // tunnel WIDTH (relative to the road). >1 = wider than the road.
+      texture: null, // image tiled across the WHOLE tunnel glass, e.g. 'assets/textures/glass.png'
       textureAlpha: 0.5,
     },
     laneLine:      'rgba(120,90,50,0.35)', // lane divider color
