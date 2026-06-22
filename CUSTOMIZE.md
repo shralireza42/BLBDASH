@@ -43,12 +43,31 @@ ui: { accentCyan: '#ff7a59', accentPink: '#ffd23f', text: '#fff', /* ... */ }
 `theme.world.*`. Arrays are gradients/layers (top → bottom / far → near).
 
 `sky`, `sunGlow`, `sunCore`, `ground`, `hill`, `mountainFar`, `mountainSnow`,
-`mountainNear`, `path`, `pathBorder`, `pathRim`, `fence` (side fences), `laneLine`,
-`archVine`, `blossom`, `treeTrunk`, `treeCanopy`, `bird`, `firefly`, `pollen`.
+`mountainNear`, `path` (tunnel floor), `pathBorder`, `pathRim`, `laneLine`,
+`blossom`, `treeTrunk`, `treeCanopy`, `bird`, `firefly`, `pollen`.
 
-> Gameplay note: the road has side **fences**. Bumping a fence (pressing toward the
-> edge while already in the outer lane) once shows a warning; a **second** bump ends
-> the run. The bump uses `theme.sounds.fence` (or the built-in synth).
+**The glass tunnel** — the player runs *inside* a translucent "liquid glass" tube and
+sees the outside scene through it. Colors live in `world.tunnel`:
+
+| Key | What |
+| --- | --- |
+| `glass` | translucent glass body (keep the alpha low so you see outside) |
+| `glassTop` | glass near the ceiling (a touch stronger) |
+| `rib` | the tube rings / ribs |
+| `gloss` | the moving liquid-glass highlights |
+| `rim` | glowing line where the glass wall meets the floor |
+
+```js
+world: { tunnel: { glass: 'rgba(255,150,90,0.12)', rib: 'rgba(255,200,150,0.5)', rim: '#ffcf8a' } }
+```
+
+The **outside world** seen through the glass is everything else in `world` (sky,
+mountains, trees…), or your textures, or your `gameplayBackground` image/GIF — all
+customizable as above.
+
+> Gameplay note: pressing toward the edge while already in the outer lane **bumps the
+> glass wall** — the first bump warns, a **second** bump ends the run. The bump uses
+> `theme.sounds.fence` (or the built-in synth).
 
 ```js
 world: { sky: ['#1b1033', '#3a1d6e', '#6a2fb0'], path: ['#3a2a55', '#4a356e', '#5a4080'] }

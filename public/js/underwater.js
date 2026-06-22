@@ -240,26 +240,52 @@
       ctx.closePath();
     }
 
+    // tube cross-section at depth z: floor centre + circular ring above it
+    _ringAt(z) {
+      const f = this.project(z, 0, 0);
+      const l = this.project(z, -LANE_EDGE, 0);
+      const r = this.project(z, LANE_EDGE, 0);
+      const half = (r.x - l.x) / 2;
+      const ry = half * 0.95;
+      return { cx: f.x, floorY: f.y, rx: half, ry, cy: f.y - ry, scale: f.scale };
+    }
+
+    // The player runs INSIDE a translucent "liquid glass" tunnel; the outside
+    // world (already drawn behind) shows through the glass.
     _drawPath(ctx) {
       const w = W_();
+      const tnl = w.tunnel || {};
       const nL = this.roadNearL, nR = this.roadNearR, fL = this.roadFarL, fR = this.roadFarR;
 
-      // grass border just outside the path (skip in image mode so backdrop shows)
+      // ground just outside the tunnel (skip in image mode so backdrop shows)
       if (!this.imageBg) {
         ctx.save(); ctx.fillStyle = def(w.pathBorder, '#3f9a46');
-        const eL = this.project(PLAYER_Z, -LANE_EDGE - 0.16, 0), eFL = this.project(VIEW, -LANE_EDGE - 0.16, 0);
-        const eR = this.project(PLAYER_Z, LANE_EDGE + 0.16, 0), eFR = this.project(VIEW, LANE_EDGE + 0.16, 0);
+        const eL = this.project(PLAYER_Z, -LANE_EDGE - 0.22, 0), eFL = this.project(VIEW, -LANE_EDGE - 0.22, 0);
+        const eR = this.project(PLAYER_Z, LANE_EDGE + 0.22, 0), eFR = this.project(VIEW, LANE_EDGE + 0.22, 0);
         this._roundedTrap(ctx, eL, eR, eFL, eFR); ctx.fill(); ctx.restore();
       }
 
-      // earthy path surface
+      // ---- translucent GLASS BODY (see the outside through it) ----
+      const near = this._ringAt(PLAYER_Z);
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(near.cx, near.cy, near.rx * 1.04, near.ry, 0, 0, 7);
+      ctx.clip();
+      const top = near.cy - near.ry;
+      const body = ctx.createLinearGradient(0, top, 0, near.floorY);
+      body.addColorStop(0, def(tnl.glassTop, 'rgba(120,210,255,0.20)'));
+      body.addColorStop(0.62, def(tnl.glass, 'rgba(150,225,255,0.12)'));
+      body.addColorStop(1, 'rgba(150,225,255,0.0)');
+      ctx.fillStyle = body;
+      ctx.fillRect(0, top, this.W, near.floorY - top + 6);
+      ctx.restore();
+
+      // ---- FLOOR (running surface) ----
       const pathC = def(w.path, ['#cda978', '#dcbe8c', '#e9d2a4']);
       const path = ctx.createLinearGradient(0, this.horizonY, 0, this.H);
       path.addColorStop(0, pathC[0]); path.addColorStop(0.55, pathC[1]); path.addColorStop(1, pathC[2]);
       ctx.fillStyle = path;
       this._roundedTrap(ctx, nL, nR, fL, fR); ctx.fill();
-
-      // optional road texture, clipped to the path
       if (this._tex.road) {
         ctx.save(); this._roundedTrap(ctx, nL, nR, fL, fR); ctx.clip();
         ctx.globalAlpha = 0.9;
@@ -267,33 +293,18 @@
         ctx.restore();
       }
 
-      // center wear-line sheen
-      ctx.save(); this._roundedTrap(ctx, nL, nR, fL, fR); ctx.clip();
-      const sheen = ctx.createLinearGradient(this.centerX - 4, 0, this.centerX + 4, 0);
-      sheen.addColorStop(0, 'rgba(255,245,220,0)'); sheen.addColorStop(0.5, 'rgba(255,245,220,0.22)'); sheen.addColorStop(1, 'rgba(255,245,220,0)');
-      ctx.fillStyle = sheen; ctx.fillRect(this.centerX - this.W * 0.08, this.horizonY, this.W * 0.16, this.H);
-      ctx.restore();
-
-      // overhead vine archways
+      // ---- TUBE RIBS (glass rings receding to the vanishing point) ----
       ctx.save(); ctx.lineCap = 'round';
-      const arch = def(w.archVine, '#2f8f48');
-      const blossom = def(w.blossom, ['#ff9ed1', '#ffe27a', '#bfe0ff']);
-      for (let z = VIEW - 4; z > PLAYER_Z; z -= 7) {
-        const l = this.project(z, -LANE_EDGE - 0.1, 0), r = this.project(z, LANE_EDGE + 0.1, 0);
-        const cx = (l.x + r.x) / 2, rx = (r.x - l.x) / 2, ry = (r.x - l.x) / 2 * 0.95;
-        ctx.globalAlpha = Math.min(0.85, l.scale * 1.5);
-        ctx.strokeStyle = arch; ctx.lineWidth = Math.max(1.5, l.scale * 6);
-        ctx.beginPath(); ctx.ellipse(cx, l.y, rx, ry, 0, Math.PI * 0.06, Math.PI - Math.PI * 0.06, true); ctx.stroke();
-        for (let k = 1; k < 7; k++) {
-          const ang = Math.PI * 0.06 + (Math.PI - Math.PI * 0.12) * (k / 7);
-          const lx = cx - Math.cos(ang) * rx, ly = l.y - Math.sin(ang) * ry;
-          ctx.fillStyle = (k % 3 === 0) ? blossom[0] : (def(w.treeCanopy, ['#56c46a'])[2] || '#56c46a');
-          ctx.beginPath(); ctx.arc(lx, ly, Math.max(1.2, l.scale * 4), 0, 7); ctx.fill();
-        }
+      const rib = def(tnl.rib, 'rgba(190,245,255,0.55)');
+      for (let z = VIEW - 3; z > PLAYER_Z; z -= 3.2) {
+        const g = this._ringAt(z);
+        ctx.globalAlpha = Math.min(0.8, g.scale * 1.5);
+        ctx.strokeStyle = rib; ctx.lineWidth = Math.max(1, g.scale * 2.6);
+        ctx.beginPath(); ctx.ellipse(g.cx, g.cy, g.rx, g.ry, 0, 0, 7); ctx.stroke();
       }
       ctx.globalAlpha = 1; ctx.restore();
 
-      // lane lines
+      // ---- lane lines on the floor ----
       ctx.save(); ctx.strokeStyle = def(w.laneLine, 'rgba(120,90,50,0.35)');
       ctx.lineWidth = 1.6; ctx.setLineDash([10, 12]);
       for (const ln of [-0.5, 0.5]) {
@@ -302,44 +313,43 @@
       }
       ctx.restore();
 
-      // grassy rim line + tufts (readable edges)
-      ctx.save(); ctx.strokeStyle = def(w.pathRim, '#6fbf5a'); ctx.lineWidth = 4; ctx.lineCap = 'round';
+      // ---- glowing wall-base rim along the floor edges ----
+      ctx.save(); ctx.strokeStyle = def(tnl.rim, '#9fe9ff');
+      ctx.shadowColor = def(tnl.rim, '#9fe9ff'); ctx.shadowBlur = 10; ctx.lineWidth = 3; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(nL.x, nL.y); ctx.lineTo(fL.x, fL.y); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(nR.x, nR.y); ctx.lineTo(fR.x, fR.y); ctx.stroke();
-      if (!this.imageBg) {
-        ctx.strokeStyle = def(w.pathBorder, '#3f9a46'); ctx.lineWidth = 2;
-        for (let z = VIEW - 2; z > PLAYER_Z; z -= 2.4) {
-          for (const side of [-1, 1]) {
-            const p = this.project(z, side * LANE_EDGE, 0);
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - side * 4 * p.scale, p.y - 7 * p.scale);
-            ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + side * 1 * p.scale, p.y - 9 * p.scale);
-            ctx.stroke();
-          }
-        }
-      }
-      ctx.restore();
-
-      // side fences along both road edges (posts + two rails)
-      ctx.save();
-      const fenceC = def(w.fence, '#9c6b3f');
-      ctx.strokeStyle = fenceC;
-      for (const side of [-1, 1]) {
-        for (let z = VIEW - 1; z > PLAYER_Z; z -= 2.6) {
-          const p = this.project(z, side * LANE_EDGE, 0);
-          ctx.lineWidth = Math.max(1, 3 * p.scale);
-          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y - 30 * p.scale); ctx.stroke();
-        }
-        const a = this.project(PLAYER_Z, side * LANE_EDGE, 0);
-        const c = this.project(VIEW, side * LANE_EDGE, 0);
-        for (const hh of [16, 28]) {
-          ctx.lineWidth = Math.max(1, a.scale * 2.2);
-          ctx.beginPath(); ctx.moveTo(a.x, a.y - hh * a.scale); ctx.lineTo(c.x, c.y - hh * c.scale); ctx.stroke();
-        }
-      }
       ctx.restore();
 
       this._rail = { nL, nR, fL, fR };
+    }
+
+    // animated "liquid glass": light pulses flowing along the tube + soft shine
+    _drawLiquid(ctx) {
+      const tnl = W_().tunnel || {};
+      const gloss = def(tnl.gloss, 'rgba(255,255,255,0.6)');
+      const near = this._ringAt(PLAYER_Z);
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(near.cx, near.cy, near.rx * 1.04, near.ry, 0, 0, 7);
+      ctx.clip();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = 0; i < 2; i++) {
+        const t = (this.time * 0.18 + i * 0.5) % 1;       // 0..1 loop
+        const z = PLAYER_Z + (VIEW - PLAYER_Z) * (1 - t); // far -> near
+        const g = this._ringAt(z);
+        ctx.globalAlpha = 0.13 * (0.35 + 0.65 * Math.sin(t * Math.PI));
+        ctx.strokeStyle = gloss; ctx.lineWidth = Math.max(1.5, g.scale * 4);
+        ctx.beginPath(); ctx.ellipse(g.cx, g.cy, g.rx, g.ry, 0, 0, 7); ctx.stroke();
+      }
+      // soft vertical shine drifting across the glass
+      const sh = (Math.sin(this.time * 0.7) * 0.5 + 0.5);
+      ctx.globalAlpha = 0.06 + 0.05 * sh;
+      const gx = near.cx + (sh - 0.5) * near.rx * 1.4;
+      const gg = ctx.createLinearGradient(gx - near.rx * 0.18, 0, gx + near.rx * 0.18, 0);
+      gg.addColorStop(0, 'rgba(255,255,255,0)'); gg.addColorStop(0.5, gloss); gg.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = gg; ctx.fillRect(gx - near.rx * 0.2, near.cy - near.ry, near.rx * 0.4, near.ry * 2);
+      ctx.restore();
+      ctx.globalAlpha = 1;
     }
 
     // ---------- ANIMATED POOLS ----------
@@ -399,7 +409,8 @@
       if (this.imageBg) ctx.clearRect(0, 0, this.W, this.H); // let the GIF/image show behind
       ctx.drawImage(this.staticCanvas, 0, 0, this.W, this.H);
       this._drawFliers(ctx);
-      this._drawSunDapples(ctx);
+      this._drawLiquid(ctx);     // flowing liquid-glass highlights on the tunnel
+      this._drawSunDapples(ctx); // light on the floor
       this._drawPollen(ctx);
       this._drawFireflies(ctx);
       this._drawSparkle(ctx);

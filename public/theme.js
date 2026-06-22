@@ -51,10 +51,19 @@ window.BlobbieTheme = {
     mountainFar:   '#9fb8da',
     mountainSnow:  '#ffffff',
     mountainNear:  '#4f9e5a',
-    path:          ['#cda978', '#dcbe8c', '#e9d2a4'], // road/path gradient
-    pathBorder:    '#3f9a46',  // grass border just outside the path
-    pathRim:       '#6fbf5a',  // bright grassy rim line on the path edge
-    fence:         '#9c6b3f',  // side fences along the road edges
+    path:          ['#cda978', '#dcbe8c', '#e9d2a4'], // tunnel FLOOR gradient (the running surface)
+    pathBorder:    '#3f9a46',  // ground just outside the tunnel
+    pathRim:       '#bdf0ff',  // bright rim line where the glass wall meets the floor
+    fence:         '#9c6b3f',  // (legacy) side fences
+
+    // Liquid-glass TUNNEL the player runs inside (translucent — you see outside).
+    tunnel: {
+      glass:  'rgba(150, 225, 255, 0.12)', // translucent glass body (low alpha = see-through)
+      glassTop:'rgba(120, 210, 255, 0.20)',// glass near the ceiling (slightly stronger)
+      rib:    'rgba(190, 245, 255, 0.55)', // the tube "ribs" (glass rings)
+      gloss:  'rgba(255, 255, 255, 0.6)',  // moving glass highlights / shine
+      rim:    '#9fe9ff',                    // neon wall-base line along the floor edges
+    },
     laneLine:      'rgba(120,90,50,0.35)', // lane divider color
     archVine:      '#2f8f48',  // overhead vine archway color
     blossom:       ['#ff9ed1', '#ffe27a', '#bfe0ff'], // flower colors
