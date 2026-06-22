@@ -74,6 +74,8 @@
       this.landImpact = 0;      // 0..1 landing squash amount
       this.shakeUntil = 0;      // camera shake end time (ms)
       this.stepTimer = 0.3;     // footstep cadence countdown
+      this.fenceTouches = 0;    // side-fence bumps (2 = game over)
+      this.fenceMsgUntil = 0;   // on-screen fence warning timer (ms)
       this.startedAt = 0;
       this.magnet = 0;
       this.animator = (window.Character && window.Character.Animator) ? new window.Character.Animator() : null;
@@ -147,14 +149,28 @@
       // Trigger the matching one-shot animation for the key that was pressed.
       if (this.animator) this.animator.play(a === 'jump' ? 'jump' : a === 'slide' ? 'slide' : a);
       const S2 = window.Sound;
-      if (a === 'left') { if (this.targetLane > 0 && S2) S2.lane(); this.targetLane = Math.max(0, this.targetLane - 1); }
-      else if (a === 'right') { if (this.targetLane < 2 && S2) S2.lane(); this.targetLane = Math.min(2, this.targetLane + 1); }
-      else if (a === 'jump') {
+      if (a === 'left') {
+        if (this.targetLane > 0) { if (S2) S2.lane(); this.targetLane--; }
+        else this._fenceBump(); // already at the left edge -> bump the fence
+      } else if (a === 'right') {
+        if (this.targetLane < 2) { if (S2) S2.lane(); this.targetLane++; }
+        else this._fenceBump(); // already at the right edge -> bump the fence
+      } else if (a === 'jump') {
         if (this.air <= 0.001 && !this.sliding) { this.vy = JUMP_V; if (S2) S2.jump(); }
       } else if (a === 'slide') {
         if (this.air <= 0.001 && !this.sliding) { this.sliding = true; this.slideTimer = SLIDE_TIME; if (S2) S2.slide(); }
         else if (this.air > 0.001) { this.vy = -JUMP_V * 0.9; } // fast-drop
       }
+    }
+
+    // Bumping a side fence: 1st bump warns, 2nd bump ends the run.
+    _fenceBump() {
+      if (!this.alive) return;
+      this.fenceTouches++;
+      this.shakeUntil = performance.now() + 320;
+      this.fenceMsgUntil = performance.now() + 950;
+      if (window.Sound) window.Sound.fence();
+      if (this.fenceTouches >= 2) this._die();
     }
 
     setOpponent(o) {
@@ -409,6 +425,18 @@
       this._drawParticles(ctx);
       this._drawPops(ctx);
       ctx.restore();
+
+      // fence-bump warning (screen-fixed, above the shake layer)
+      if (now < this.fenceMsgUntil && this.alive) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, (this.fenceMsgUntil - now) / 400);
+        ctx.fillStyle = '#ff5a4d';
+        ctx.font = 'bold ' + Math.round(H * 0.052) + 'px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 8;
+        ctx.fillText('\u26A0 FENCE  ' + this.fenceTouches + ' / 2', W / 2, H * 0.22);
+        ctx.restore();
+      }
     }
 
     // depth fog: entities emerge from the underwater haze as they approach

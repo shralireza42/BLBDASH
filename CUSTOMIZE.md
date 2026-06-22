@@ -43,8 +43,12 @@ ui: { accentCyan: '#ff7a59', accentPink: '#ffd23f', text: '#fff', /* ... */ }
 `theme.world.*`. Arrays are gradients/layers (top → bottom / far → near).
 
 `sky`, `sunGlow`, `sunCore`, `ground`, `hill`, `mountainFar`, `mountainSnow`,
-`mountainNear`, `path`, `pathBorder`, `pathRim`, `laneLine`, `archVine`,
-`blossom`, `treeTrunk`, `treeCanopy`, `bird`, `firefly`, `pollen`.
+`mountainNear`, `path`, `pathBorder`, `pathRim`, `fence` (side fences), `laneLine`,
+`archVine`, `blossom`, `treeTrunk`, `treeCanopy`, `bird`, `firefly`, `pollen`.
+
+> Gameplay note: the road has side **fences**. Bumping a fence (pressing toward the
+> edge while already in the outer lane) once shows a warning; a **second** bump ends
+> the run. The bump uses `theme.sounds.fence` (or the built-in synth).
 
 ```js
 world: { sky: ['#1b1033', '#3a1d6e', '#6a2fb0'], path: ['#3a2a55', '#4a356e', '#5a4080'] }

@@ -54,6 +54,7 @@ window.BlobbieTheme = {
     path:          ['#cda978', '#dcbe8c', '#e9d2a4'], // road/path gradient
     pathBorder:    '#3f9a46',  // grass border just outside the path
     pathRim:       '#6fbf5a',  // bright grassy rim line on the path edge
+    fence:         '#9c6b3f',  // side fences along the road edges
     laneLine:      'rgba(120,90,50,0.35)', // lane divider color
     archVine:      '#2f8f48',  // overhead vine archway color
     blossom:       ['#ff9ed1', '#ffe27a', '#bfe0ff'], // flower colors
@@ -144,6 +145,7 @@ window.BlobbieTheme = {
     jump: null, slide: null, lane: null, coin: null, crash: null,
     win: null, lose: null, click: null, count: null, go: null,
     footstep: null, // plays repeatedly while running, e.g. 'assets/sounds/footstep.mp3'
+    fence: null,    // plays when you bump a side fence
   },
 
   /* -------------------------------------------- GAMEPLAY BACKGROUND IMG ----

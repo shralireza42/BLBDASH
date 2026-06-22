@@ -320,6 +320,25 @@
       }
       ctx.restore();
 
+      // side fences along both road edges (posts + two rails)
+      ctx.save();
+      const fenceC = def(w.fence, '#9c6b3f');
+      ctx.strokeStyle = fenceC;
+      for (const side of [-1, 1]) {
+        for (let z = VIEW - 1; z > PLAYER_Z; z -= 2.6) {
+          const p = this.project(z, side * LANE_EDGE, 0);
+          ctx.lineWidth = Math.max(1, 3 * p.scale);
+          ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y - 30 * p.scale); ctx.stroke();
+        }
+        const a = this.project(PLAYER_Z, side * LANE_EDGE, 0);
+        const c = this.project(VIEW, side * LANE_EDGE, 0);
+        for (const hh of [16, 28]) {
+          ctx.lineWidth = Math.max(1, a.scale * 2.2);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y - hh * a.scale); ctx.lineTo(c.x, c.y - hh * c.scale); ctx.stroke();
+        }
+      }
+      ctx.restore();
+
       this._rail = { nL, nR, fL, fR };
     }
 

@@ -90,6 +90,8 @@
     go() { tone({ type: 'sine', f0: 880, dur: 0.3, vol: 0.3 }); },
     // soft running footstep (subtle): a short filtered tap + a tiny low thud
     footstep() { noise(0.06, 300, 1.4, 0.10); tone({ type: 'sine', f0: 150, f1: 80, dur: 0.07, vol: 0.06 }); },
+    // wooden fence bump
+    fence() { tone({ type: 'square', f0: 190, f1: 90, dur: 0.12, vol: 0.2 }); noise(0.07, 520, 1.4, 0.16); },
   };
 
   // ---- looping ambient synthwave music ----
@@ -203,6 +205,6 @@
     jump: () => sfx('jump'), slide: () => sfx('slide'), lane: () => sfx('lane'),
     coin: () => sfx('coin'), crash: () => sfx('crash'), win: () => sfx('win'),
     lose: () => sfx('lose'), click: () => sfx('click'), count: () => sfx('count'), go: () => sfx('go'),
-    footstep: () => sfx('footstep'),
+    footstep: () => sfx('footstep'), fence: () => sfx('fence'),
   };
 })();
