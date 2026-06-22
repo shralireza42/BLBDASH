@@ -36,6 +36,11 @@ window.BlobbieTheme = {
     gold:        '#ffd23f',   // $BLOBBIE / coin accent
     cardBg:      'rgba(16, 38, 26, 0.42)',   // glass panel background
     cardBorder:  'rgba(140, 240, 170, 0.34)',// glass panel border
+
+    // Optional BACKGROUND IMAGES/TEXTURES for the UI (PNG/JPG/SVG). Leave null
+    // to use the colors above. Drop files in public/assets/ui/.
+    buttonTexture: null, // image behind every button, e.g. 'assets/ui/button.png'
+    cardTexture:   null, // image behind panels/cards, e.g. 'assets/ui/panel.png'
   },
 
   /* ------------------------------------------------------------- WORLD ----

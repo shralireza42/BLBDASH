@@ -38,6 +38,17 @@ Supported image formats: **PNG, JPG, SVG, and animated GIF**. Audio: **MP3/OGG/W
 ui: { accentCyan: '#ff7a59', accentPink: '#ffd23f', text: '#fff', /* ... */ }
 ```
 
+**Button & panel background images** — use your own art/texture behind the UI
+(drop files in `public/assets/ui/`):
+
+```js
+ui: {
+  buttonTexture: 'assets/ui/button.png', // behind every button
+  cardTexture:   'assets/ui/panel.png',  // behind menu/result panels & mode cards
+}
+```
+Images are scaled to cover; keep `ui.ink`/`ui.text` readable against them.
+
 ## 2. Game world colors (sky, mountains, road, trees…)
 
 `theme.world.*`. Arrays are gradients/layers (top → bottom / far → near).

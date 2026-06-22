@@ -92,6 +92,14 @@
     set('--green', u.accentGreen); set('--gold', u.gold);
     set('--card', u.cardBg); set('--card-brd', u.cardBorder);
 
+    // optional UI background textures (absolutize so the URL resolves against the
+    // page, not the CSS file, when used in background-image)
+    const abs = (url) => { try { return new URL(url, document.baseURI).href; } catch (e) { return url; } };
+    if (u.buttonTexture) { root.setProperty('--btn-image', 'url("' + abs(u.buttonTexture) + '")'); document.body.classList.add('btn-tex'); }
+    else document.body.classList.remove('btn-tex');
+    if (u.cardTexture) { root.setProperty('--card-image', 'url("' + abs(u.cardTexture) + '")'); document.body.classList.add('card-tex'); }
+    else document.body.classList.remove('card-tex');
+
     if (T.gameplayBackground) {
       const img = $('worldBgImg');
       if (img) {
@@ -612,11 +620,7 @@
       else toast('Code: ' + code);
     };
 
-    // on-screen touch buttons
-    Array.from(document.querySelectorAll('.tc')).forEach((b) => {
-      const act = b.dataset.act;
-      b.addEventListener('click', (e) => { e.preventDefault(); if (state.game) state.game.action(act); });
-    });
+    // (on-screen control buttons removed — mobile uses swipe, desktop uses keyboard)
   }
 
   window.addEventListener('DOMContentLoaded', init);

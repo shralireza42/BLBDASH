@@ -15,6 +15,7 @@
   'use strict';
 
   const FOCAL = 10, VIEW = 72, PLAYER_Z = 0.6, LANE_EDGE = 1.55;
+  const FLOOR_NEAR = -0.4; // the road/tunnel near edge sits BELOW the player, at the screen bottom
   const W_ = () => (window.BlobbieTheme && window.BlobbieTheme.world) || {};
   const def = (v, d) => (v == null ? d : v);
   const camH = () => {
@@ -60,9 +61,9 @@
       this.groundY = H * 0.97;
       this.centerX = W / 2;
       this.spread = W * 0.27;
-      this.roadNearL = this.project(PLAYER_Z, -LANE_EDGE, 0);
+      this.roadNearL = this.project(FLOOR_NEAR, -LANE_EDGE, 0);
       this.roadFarL = this.project(VIEW, -LANE_EDGE, 0);
-      this.roadNearR = this.project(PLAYER_Z, LANE_EDGE, 0);
+      this.roadNearR = this.project(FLOOR_NEAR, LANE_EDGE, 0);
       this.roadFarR = this.project(VIEW, LANE_EDGE, 0);
       this._buildStatic();
       this._buildTunnel();
@@ -289,7 +290,7 @@
       const w = W_();
       const tnl = w.tunnel || {};
       const nL = this.roadNearL, nR = this.roadNearR, fL = this.roadFarL, fR = this.roadFarR;
-      const near = this._ringAt(PLAYER_Z);
+      const near = this._ringAt(FLOOR_NEAR);
 
       // ---- translucent GLASS BODY (whole arch dome -> full tunnel) ----
       ctx.save();
@@ -319,7 +320,7 @@
       // ---- TUBE RIBS (top arches receding to the vanishing point) ----
       ctx.save(); ctx.lineCap = 'round';
       const rib = def(tnl.rib, 'rgba(190,245,255,0.55)');
-      for (let z = VIEW - 3; z > PLAYER_Z; z -= 3.2) {
+      for (let z = VIEW - 3; z > FLOOR_NEAR; z -= 3.2) {
         const g = this._ringAt(z);
         ctx.globalAlpha = Math.min(0.8, g.scale * 1.5);
         ctx.strokeStyle = rib; ctx.lineWidth = Math.max(1, g.scale * 2.6);
@@ -344,7 +345,7 @@
       ctx.save(); ctx.strokeStyle = def(w.laneLine, 'rgba(120,90,50,0.35)');
       ctx.lineWidth = 1.6; ctx.setLineDash([10, 12]);
       for (const ln of [-0.5, 0.5]) {
-        const a = this.project(PLAYER_Z, ln, 0), b = this.project(VIEW, ln, 0);
+        const a = this.project(FLOOR_NEAR, ln, 0), b = this.project(VIEW, ln, 0);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       }
       ctx.restore();
@@ -363,7 +364,7 @@
     _drawLiquid(ctx) {
       const tnl = W_().tunnel || {};
       const gloss = def(tnl.gloss, 'rgba(255,255,255,0.6)');
-      const near = this._ringAt(PLAYER_Z);
+      const near = this._ringAt(FLOOR_NEAR);
       ctx.save();
       ctx.beginPath();
       ctx.ellipse(near.cx, near.baseY, near.rx, near.ry, 0, Math.PI, 2 * Math.PI); // arch only
@@ -371,8 +372,8 @@
       ctx.clip();
       ctx.globalCompositeOperation = 'lighter';
       for (let i = 0; i < 2; i++) {
-        const t = (this.time * 0.18 + i * 0.5) % 1;       // 0..1 loop
-        const z = PLAYER_Z + (VIEW - PLAYER_Z) * (1 - t); // far -> near
+        const t = (this.time * 0.18 + i * 0.5) % 1;        // 0..1 loop
+        const z = FLOOR_NEAR + (VIEW - FLOOR_NEAR) * (1 - t); // far -> near
         const g = this._ringAt(z);
         ctx.globalAlpha = 0.13 * (0.35 + 0.65 * Math.sin(t * Math.PI));
         ctx.strokeStyle = gloss; ctx.lineWidth = Math.max(1.5, g.scale * 4);

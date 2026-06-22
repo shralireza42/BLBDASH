@@ -21,6 +21,17 @@
 }
 
 #bgfx { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; }
+
+/* Optional custom UI background textures (set via theme.ui.buttonTexture / cardTexture) */
+body.btn-tex .btn {
+  background-image: var(--btn-image);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+}
+body.card-tex .card,
+body.card-tex .mode-card {
+  background-image: var(--card-image);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+}
 /* Optional image/GIF world backdrop (set via theme.gameplayBackground) */
 #worldBgImg { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; display: none; }
 body.bg-image #worldBgImg { display: block; }

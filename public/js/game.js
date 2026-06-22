@@ -491,7 +491,7 @@
       ctx.strokeStyle = TLINE();
       ctx.shadowColor = '#fff7d0'; ctx.shadowBlur = 6; ctx.lineWidth = 1.4;
       const dashStart = this.traveled % 3;
-      for (let z = VIEW - dashStart; z > PLAYER_Z; z -= 3) {
+      for (let z = VIEW - dashStart; z > -0.4; z -= 3) { // down to the screen bottom
         const a = this._project(z, -1.55, 0);
         const b = this._project(z, 1.55, 0);
         ctx.globalAlpha = Math.min(0.8, a.scale * 1.4);
