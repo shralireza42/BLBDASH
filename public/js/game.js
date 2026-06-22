@@ -93,8 +93,10 @@
       this.canvas.height = Math.round(h * dpr);
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       this.W = w; this.H = h;
-      this.horizonY = h * this._camHorizon(); // matches the shared world background
       this.groundY = h * 0.97;
+      // keep the horizon a little above the ground plane so the road always has
+      // length (lets horizon go up to 1.0 in the theme without breaking).
+      this.horizonY = Math.min(h * this._camHorizon(), this.groundY - h * 0.06); // matches the shared world background
       this.centerX = w / 2;
       this.spread = w * 0.27;
       if (this.bg) this.bg.setSize(w, h, dpr);
@@ -393,7 +395,14 @@
     }
     _camHorizon() {
       const v = window.BlobbieTheme && window.BlobbieTheme.camera && window.BlobbieTheme.camera.horizon;
-      return Math.max(0.15, Math.min(0.55, (typeof v === 'number' && isFinite(v)) ? v : 0.30));
+      return Math.max(0.15, Math.min(1.0, (typeof v === 'number' && isFinite(v)) ? v : 0.30));
+    }
+    // character size multiplier: theme.character.size 1..10 (5 = default 1.0x)
+    _charScale() {
+      const c = window.BlobbieTheme && window.BlobbieTheme.character;
+      let s = (c && typeof c.size === 'number' && isFinite(c.size)) ? c.size : 5;
+      s = Math.max(1, Math.min(10, s));
+      return s / 5;
     }
 
     // ---- rendering ----
@@ -676,7 +685,7 @@
       if (!this.alive) return; // loser character is removed (only the burst plays)
       // laneWorld goes -1 (left) .. 1 (right); this.lane is 0..2.
       const p = this._project(PLAYER_Z, this.lane - 1, this.air);
-      const size = this.H * 0.2;
+      const size = this.H * 0.2 * this._charScale();
       let state = 'run';
       if (this.air > 0.02) state = 'jump';
       else if (this.sliding) state = 'slide';
@@ -712,7 +721,7 @@
       const laneWorld = (o.lane == null ? 1 : o.lane) - 1;
       const p = this._project(zg, laneWorld, o.air || 0);
       const playerScale = FOCAL / (FOCAL + PLAYER_Z);
-      const size = this.H * 0.18 * (p.scale / playerScale);
+      const size = this.H * 0.18 * (p.scale / playerScale) * this._charScale();
       const frame = o.frame || (window.Character && window.Character.frameAtTime
         ? window.Character.frameAtTime('run', this.time) : null);
       const color = o.color || '#39ff9e';

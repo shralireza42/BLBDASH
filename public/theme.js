@@ -125,8 +125,8 @@ window.BlobbieTheme = {
   camera: {
     zoom: 1.25,    // closeness to Blobbie (1 = default, higher = closer)
     // Camera angle / tilt: where the horizon sits (fraction of screen height).
-    // LOWER = camera looks more DOWN (more floor / top-down), HIGHER = flatter.
-    // Range ~0.15–0.55.
+    // LOWER = camera looks more DOWN (more floor / top-down), HIGHER = flatter /
+    // more level. Range 0.15–1.0 (values near 1 flatten the road to a thin strip).
     horizon: 0.30,
   },
 
@@ -140,6 +140,7 @@ window.BlobbieTheme = {
    */
   character: {
     format: 'png', // 'svg' or 'png'
+    size: 5,       // character size from 1 (small) to 10 (big). 5 = default size.
   },
 
   /* ------------------------------------------------------------ SPRITES ----

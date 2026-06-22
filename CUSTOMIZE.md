@@ -155,9 +155,13 @@ sprites: { player: 'assets/sprites/player.png' }
 file names. The 5 animations are run / jump / slide / move-left / move-right. Open
 `/assets/character/preview.html` to see every frame and the input→animation map.
 
-Choose the **file format** in `theme.js`:
+Choose the **file format** and **size** in `theme.js`:
 ```js
-character: { format: 'png' } // or 'svg'
+character: {
+  format: 'png', // or 'svg'
+  size: 5,       // 1 (small) … 10 (big); 5 = default size. Visual only —
+                 // hitboxes/collisions are unchanged. Also scales rival ghosts.
+}
 ```
 - `png` (default) → frames load from `public/assets/character/png/<frame>.png`
 - `svg`           → frames load from `public/assets/character/svg/<frame>.svg`
@@ -203,13 +207,15 @@ Set how close the camera sits to Blobbie in `theme.js`:
 camera: {
   zoom: 1.25,    // 1 = default, higher = closer, lower = pulled back (~0.8–2.2)
   horizon: 0.30, // camera ANGLE: where the horizon sits (fraction of height).
-                 // LOWER = look more DOWN (more floor / top-down), HIGHER = flatter. (~0.15–0.55)
+                 // LOWER = look more DOWN (more floor / top-down), HIGHER = flatter. (0.15–1.0)
 }
 ```
 
 `zoom` scales the scene around Blobbie's feet (he stays anchored at the bottom).
 `horizon` tilts the camera: lower values push the horizon up so you see more of the
-floor (a more downward angle). Both are purely visual — gameplay is unchanged.
+floor (a more downward angle); higher values (up to `1.0`) make the view flatter /
+more level. Very high values flatten the road to a thin strip near the bottom. Both
+are purely visual — gameplay is unchanged.
 
 ## 10. Speed lines & effects
 

@@ -20,7 +20,7 @@
   const def = (v, d) => (v == null ? d : v);
   const camH = () => {
     const v = window.BlobbieTheme && window.BlobbieTheme.camera && window.BlobbieTheme.camera.horizon;
-    return Math.max(0.15, Math.min(0.55, (typeof v === 'number' && isFinite(v)) ? v : 0.30));
+    return Math.max(0.15, Math.min(1.0, (typeof v === 'number' && isFinite(v)) ? v : 0.30));
   };
 
   class BlobbieDashUnderwaterBackground {
@@ -57,8 +57,10 @@
       this.imageBg = !!(window.BlobbieTheme && window.BlobbieTheme.gameplayBackground);
       if (this._built && this.W === W && this.H === H && this.dpr === dpr) return;
       this.W = W; this.H = H; this.dpr = dpr;
-      this.horizonY = H * camH();
       this.groundY = H * 0.97;
+      // keep the horizon above the ground plane so the road keeps length even at
+      // very high horizon values (theme horizon can go up to 1.0).
+      this.horizonY = Math.min(H * camH(), this.groundY - H * 0.06);
       this.centerX = W / 2;
       this.spread = W * 0.27;
       this.roadNearL = this.project(FLOOR_NEAR, -LANE_EDGE, 0);
