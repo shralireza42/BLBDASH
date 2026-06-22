@@ -240,18 +240,19 @@
       ctx.closePath();
     }
 
-    // tube cross-section at depth z: floor centre + circular ring above it
+    // tube arch at depth z: an ellipse CENTERED ON THE FLOOR EDGE line, so its
+    // TOP half springs from the two road edges and arches over the road.
     _ringAt(z) {
-      const f = this.project(z, 0, 0);
       const l = this.project(z, -LANE_EDGE, 0);
       const r = this.project(z, LANE_EDGE, 0);
-      const half = (r.x - l.x) / 2;
-      const ry = half * 0.95;
-      return { cx: f.x, floorY: f.y, rx: half, ry, cy: f.y - ry, scale: f.scale };
+      const cx = (l.x + r.x) / 2;
+      const rx = (r.x - l.x) / 2;
+      return { cx, baseY: l.y, rx, ry: rx * 0.92, scale: l.scale };
     }
 
-    // The player runs INSIDE a translucent "liquid glass" tunnel; the outside
-    // world (already drawn behind) shows through the glass.
+    // The player runs INSIDE a translucent "liquid glass" tunnel that arches
+    // OVER the road (nothing is drawn under the road). The outside world shows
+    // through the glass.
     _drawPath(ctx) {
       const w = W_();
       const tnl = w.tunnel || {};
@@ -265,22 +266,7 @@
         this._roundedTrap(ctx, eL, eR, eFL, eFR); ctx.fill(); ctx.restore();
       }
 
-      // ---- translucent GLASS BODY (see the outside through it) ----
-      const near = this._ringAt(PLAYER_Z);
-      ctx.save();
-      ctx.beginPath();
-      ctx.ellipse(near.cx, near.cy, near.rx * 1.04, near.ry, 0, 0, 7);
-      ctx.clip();
-      const top = near.cy - near.ry;
-      const body = ctx.createLinearGradient(0, top, 0, near.floorY);
-      body.addColorStop(0, def(tnl.glassTop, 'rgba(120,210,255,0.20)'));
-      body.addColorStop(0.62, def(tnl.glass, 'rgba(150,225,255,0.12)'));
-      body.addColorStop(1, 'rgba(150,225,255,0.0)');
-      ctx.fillStyle = body;
-      ctx.fillRect(0, top, this.W, near.floorY - top + 6);
-      ctx.restore();
-
-      // ---- FLOOR (running surface) ----
+      // ---- FLOOR (running surface) — drawn first so it stays clean ----
       const pathC = def(w.path, ['#cda978', '#dcbe8c', '#e9d2a4']);
       const path = ctx.createLinearGradient(0, this.horizonY, 0, this.H);
       path.addColorStop(0, pathC[0]); path.addColorStop(0.55, pathC[1]); path.addColorStop(1, pathC[2]);
@@ -293,14 +279,30 @@
         ctx.restore();
       }
 
-      // ---- TUBE RIBS (glass rings receding to the vanishing point) ----
+      // ---- translucent GLASS BODY, only in the ARCH above the road ----
+      const near = this._ringAt(PLAYER_Z);
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(near.cx, near.baseY, near.rx, near.ry, 0, Math.PI, 2 * Math.PI); // top arc
+      ctx.closePath(); // close along the road edge line -> fills the dome only
+      ctx.clip();
+      const top = near.baseY - near.ry;
+      const body = ctx.createLinearGradient(0, top, 0, near.baseY);
+      body.addColorStop(0, def(tnl.glassTop, 'rgba(120,210,255,0.20)'));
+      body.addColorStop(0.62, def(tnl.glass, 'rgba(150,225,255,0.12)'));
+      body.addColorStop(1, 'rgba(150,225,255,0.0)');
+      ctx.fillStyle = body;
+      ctx.fillRect(0, top, this.W, near.ry + 4);
+      ctx.restore();
+
+      // ---- TUBE RIBS (top arches receding to the vanishing point) ----
       ctx.save(); ctx.lineCap = 'round';
       const rib = def(tnl.rib, 'rgba(190,245,255,0.55)');
       for (let z = VIEW - 3; z > PLAYER_Z; z -= 3.2) {
         const g = this._ringAt(z);
         ctx.globalAlpha = Math.min(0.8, g.scale * 1.5);
         ctx.strokeStyle = rib; ctx.lineWidth = Math.max(1, g.scale * 2.6);
-        ctx.beginPath(); ctx.ellipse(g.cx, g.cy, g.rx, g.ry, 0, 0, 7); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(g.cx, g.baseY, g.rx, g.ry, 0, Math.PI, 2 * Math.PI); ctx.stroke();
       }
       ctx.globalAlpha = 1; ctx.restore();
 
@@ -330,7 +332,8 @@
       const near = this._ringAt(PLAYER_Z);
       ctx.save();
       ctx.beginPath();
-      ctx.ellipse(near.cx, near.cy, near.rx * 1.04, near.ry, 0, 0, 7);
+      ctx.ellipse(near.cx, near.baseY, near.rx, near.ry, 0, Math.PI, 2 * Math.PI); // arch only
+      ctx.closePath();
       ctx.clip();
       ctx.globalCompositeOperation = 'lighter';
       for (let i = 0; i < 2; i++) {
@@ -339,7 +342,7 @@
         const g = this._ringAt(z);
         ctx.globalAlpha = 0.13 * (0.35 + 0.65 * Math.sin(t * Math.PI));
         ctx.strokeStyle = gloss; ctx.lineWidth = Math.max(1.5, g.scale * 4);
-        ctx.beginPath(); ctx.ellipse(g.cx, g.cy, g.rx, g.ry, 0, 0, 7); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(g.cx, g.baseY, g.rx, g.ry, 0, Math.PI, 2 * Math.PI); ctx.stroke();
       }
       // soft vertical shine drifting across the glass
       const sh = (Math.sin(this.time * 0.7) * 0.5 + 0.5);
@@ -347,7 +350,7 @@
       const gx = near.cx + (sh - 0.5) * near.rx * 1.4;
       const gg = ctx.createLinearGradient(gx - near.rx * 0.18, 0, gx + near.rx * 0.18, 0);
       gg.addColorStop(0, 'rgba(255,255,255,0)'); gg.addColorStop(0.5, gloss); gg.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = gg; ctx.fillRect(gx - near.rx * 0.2, near.cy - near.ry, near.rx * 0.4, near.ry * 2);
+      ctx.fillStyle = gg; ctx.fillRect(gx - near.rx * 0.2, near.baseY - near.ry, near.rx * 0.4, near.ry);
       ctx.restore();
       ctx.globalAlpha = 1;
     }
